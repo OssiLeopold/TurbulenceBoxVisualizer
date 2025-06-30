@@ -7,6 +7,7 @@ from multiprocessing.resource_tracker import unregister
 
 from animation_specs import AnimationSpecs      # Class for animation object
 from animation_2D import Animation2D
+from animation_triple import AnimationTriple
 
 # Set path to simulation bulkfiles
 bulkpath = "/home/rxelmer/Documents/turso/bulks/sim21/"
@@ -26,7 +27,7 @@ end_frame = 20
 
 # <variable>: "B", "v", "J", "rho"
 
-# <component>: "x", "y", "z", "total" or "all" for vector variable and "pass" for scalar variable.
+# <component>: "x", "y", "z", or "total" for vector variable and "pass" for scalar variable.
 
 # <animation_spesific>:
 #   - 2D and tirple: "unit" or "unitless"
@@ -51,7 +52,7 @@ name_beginning = "TurbulenceBoxPlots/sim21_anim/sim21"
 filetype = ".mp4"
 
 animations = [
-              ("2D", "B", "x", "unitless"),("2D", "B", "y", "unitless"),("2D", "B", "z", "unitless"),("2D", "rho", "pass", "unit")
+              ("triple", "B", "pass", "unitless")
              ]
 
 # Generate names for objects
@@ -81,6 +82,7 @@ for i, object in enumerate(animations):
         animation_specific = object[3], name = names[i], bulkpath=bulkpath
     )
 
+# Fetch data from vlsvfiles and place into shared memory
 def fetcher(variable_component):
     data = []
     if variable_component[0] == "rho" or variable_component[1] == "magnitude":
@@ -110,26 +112,23 @@ def fetcher(variable_component):
     unregister(shm._name, 'shared_memory')
     return block
 
-
-def chooser(object):
-    if object.animation_type == "2D":
-        Animation2D(object)
-"""     elif object.animation_type == "triple":
-        animation_triple()
-    elif object.animation_type == "fourier":
-        animation_fourier()
-    elif object.animation_type == "sf":
-        animation_sf()
-    elif object.animation_type == "kurtosis":
-        animation_kurtosis() """
-
+# Define which variables need to be fetched. Employ logic to avoid duplicates.
 variables_to_be = [] # or not?
 for object in animations:
+    if object.animation_type == "triple":
+        for component in ["x","y","z"]:
+            if (object.variable, component) not in variables_to_be:
+                variables_to_be.append((object.variable, component))
+    elif (object.variable, object.component) not in variables_to_be:
+        variables_to_be.append((object.variable, object.component))
+    
     if object.animation_type == "2D" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be and object.component != "pass":
         variables_to_be.append((object.variable, "magnitude"))
-    if (object.variable, object.component) not in variables_to_be:
-        variables_to_be.append((object.variable, object.component))
+    
+    if object.animation_type == "triple" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be:
+        variables_to_be.append((object.variable, "magnitude"))
 
+# Fetch all cellids of the bulkfiles
 cellids = []
 for i in range(end_frame - start_frame):
     vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + f"bulk.{str(start_frame + i).zfill(7)}.vlsv")
@@ -140,26 +139,47 @@ shared_blocks = []
 with mp.Pool(len(variables_to_be)) as process:
     shared_blocks = process.map(fetcher, variables_to_be)
 
+# Include shared_memory adress and relevant data to animation objects
 for object in animations:
     for block in shared_blocks:
         if object.variable == block["variable"] and object.component == block["component"]:
             object.memory_space = block["name"]
             object.shape = block["shape"]
             object.dtype = block["dtype"]
+            
         if object.animation_type == "2D" and object.unitless == True and object.component != "pass":
             for block_norm in shared_blocks:
                 if block_norm["variable"] == block["variable"] and block_norm["component"] == "magnitude":
                     object.memory_space_norm = block_norm["name"]
 
-""" for object in animations:
+        if object.animation_type == "triple" and object.unitless == True:
+            for block_norm in shared_blocks:
+                if block_norm["variable"] == block["variable"] and block_norm["component"] == "magnitude":
+                    object.memory_space_norm = block_norm["name"]
+
+# Debugging
+for object in animations:
     print(object.memory_space_norm)
 
 for block in shared_blocks:
-    print(block) """
+    print(block)
 
-# Launch a separate process for each AnimationSpecs object
+# Function for launching correct animation for each animation object
+def chooser(object):
+    if object.animation_type == "2D":
+        Animation2D(object)
+    elif object.animation_type == "triple":
+        AnimationTriple(object)
+"""    elif object.animation_type == "fourier":
+        animation_fourier()
+    elif object.animation_type == "sf":
+        animation_sf()
+    elif object.animation_type == "kurtosis":
+        animation_kurtosis() """
+
+""" # Launch a separate process for each AnimationSpecs object
 with mp.Pool(len(animations)) as process:
-    process.map(chooser, animations)
+    process.map(chooser, animations) """
 
 # Delete shared memory
 for block in shared_blocks:

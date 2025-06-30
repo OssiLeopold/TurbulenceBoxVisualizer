@@ -13,7 +13,7 @@ plt.rcParams['animation.ffmpeg_path'] = "/home/rxelmer/Documents/turso/appl_loca
 os.environ['PATH']='/home/rxelmer/Documents/turso/appl_local/tex-basic/texlive/2023/bin/x86_64-linux:'+ os.environ['PATH'] 
 os.environ['PTNOLATEX']='1'
 
-class Animation2D():
+class AnimationTriple():
     def __init__(self, object):
         self.object = object
         shm = shared_memory.SharedMemory(name=object.memory_space)

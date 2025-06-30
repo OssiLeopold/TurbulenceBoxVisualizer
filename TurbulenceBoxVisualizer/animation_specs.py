@@ -12,7 +12,7 @@ class AnimationSpecs():
         self, animation_type, variable, component, 
         animation_specific, name, bulkpath
         ):
-        if animation_type not in ["2D", "fourier", "sd", "kurtosis"]:
+        if animation_type not in ["2D", "triple", "fourier", "sd", "kurtosis"]:
             print("animation_type defined incorrectly")
             print(name)
             sys.exit(1)
@@ -27,7 +27,7 @@ class AnimationSpecs():
             print(name)
             sys.exit(1)
 
-        if animation_type == "2D":
+        if animation_type == "2D" or animation_type == "triple":
             if animation_specific == "unitless":
                 self.unitless = True
                 self.memory_space_norm = ""
