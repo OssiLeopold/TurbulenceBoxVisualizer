@@ -29,16 +29,7 @@ class Animation2D():
         x = np.array([self.vlsvobj.get_cell_coordinates(coord)[0] for coord in np.sort(self.cellids)])
         y = np.array([self.vlsvobj.get_cell_coordinates(coord)[1] for coord in np.sort(self.cellids)])
         self.x_mesh = x.reshape(-1,self.x_length) / dp
-        temp_x = []
-        for i in range(len(self.x_mesh)):
-            temp_x.append(np.append(self.x_mesh[i], self.x_mesh[i][-1] + 30000 / dp))
-        temp_x.append(temp_x[-1])
-
         self.y_mesh = y.reshape(-1,self.x_length) / dp
-        temp_y = []
-        for i in range(len(self.y_mesh)):
-            temp_y.append(np.append(self.y_mesh[i], self.y_mesh[i][-1]))
-        temp_y.append(temp_y[-1])
 
         self.frames = len(self.data)
 
@@ -50,8 +41,14 @@ class Animation2D():
     def animation_unitless(self):
         shm_norm = shared_memory.SharedMemory(name=self.object.memory_space_norm)
         mag = np.ndarray(self.object.shape, dtype=self.object.dtype, buffer=shm_norm.buf)
+        mag_average = np.empty(self.frames)
 
-        unitless_data = self.data / mag
+        for i in range(self.frames):
+            mag_average[i] = np.average(mag[i])
+
+        unitless_data = np.empty(self.object.shape)
+        for i in range(self.frames):
+            unitless_data[i] = self.data[i] / mag_average[i]
 
         fig, self.ax = plt.subplots()
 
@@ -68,10 +65,11 @@ class Animation2D():
             self.data_mesh.append(unitless_data[i].reshape(-1, self.x_length))
 
         self.p = [
-            self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[0], cmap = "bwr", vmin=self.Min, vmax=self.Max, shading = "flat")]
+            self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[0], cmap = "bwr", vmin=self.Min, vmax=self.Max)]
         cbar = fig.colorbar(self.p[0])
 
-        self.ax.set_title(r'$\delta {}$'.format(self.object.variable_name + "_" + self.object.component), fontsize=16)
+        title = f"$\\frac{{{"\\delta " + self.object.variable_name + "_" + self.object.component}}}{{\\langle {self.object.variable_name}\\rangle}}$"
+        self.ax.set_title(r'{}'.format(title), fontsize=16)
         self.ax.set_xlabel(r'$x/d_p$',fontsize=12)
         self.ax.set_ylabel(r'$y/d_p$', rotation=0, fontsize=12)
         
@@ -85,7 +83,7 @@ class Animation2D():
     def unitless_update(self,frame):
         self.p[0].remove()
         self.p = [
-            self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max, shading = "flat")]
+            self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max)]
         return self.p[0]
 
     def animation_unit(self):

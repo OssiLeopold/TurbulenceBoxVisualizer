@@ -8,13 +8,16 @@ from multiprocessing.resource_tracker import unregister
 from animation_specs import AnimationSpecs      # Class for animation object
 from animation_2D import Animation2D
 from animation_triple import AnimationTriple
+from animation_fourier import AnimationFourier
 
 # Set path to simulation bulkfiles
-bulkpath = "/home/rxelmer/Documents/turso/bulks/sim21/"
+bulkpath = "/home/rxelmer/Documents/turso/bulks/sim22/"
+vlsvobj = pt.vlsvfile.VlsvReader(bulkpath + "bulk.0000000.vlsv")
+x_length = vlsvobj.read_parameter("xcells_ini")
 
 # Enter number of frames to be animated. Define start frame if you want to start from some point.
 start_frame = 0
-end_frame = 20
+end_frame = 5
 
 # Define what animations are to be produced:
 # Each animation has to be in the from of a list, e.g: ["<animation_type>", "<variable>", "<component>", "<animation_spesific>"]
@@ -48,11 +51,11 @@ end_frame = 20
 #
 #   - kurtosis: again a list like [2,4,6...].
  
-name_beginning = "TurbulenceBoxPlots/sim21_anim/sim21"
+name_beginning = "TurbulenceBoxPlots/sim22_anim/sim22"
 filetype = ".mp4"
 
 animations = [
-              ("triple", "B", "pass", "unitless")
+             ("fourier", "B", "y",["x",0.5])
              ]
 
 # Generate names for objects
@@ -87,19 +90,16 @@ for i, object in enumerate(animations):
 
 # Fetch data from vlsvfiles and place into shared memory
 def fetcher(variable_component):
-    data = []
+    data = np.empty((end_frame - start_frame + 1, x_length*x_length))
     if variable_component[0] == "rho" or variable_component[1] == "magnitude":
         for frame in range(end_frame - start_frame + 1):
             vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + f"bulk.{str(start_frame + frame).zfill(7)}.vlsv")
-            data.append(
-                np.array(vlsvobj.read_variable(variable_component[0], operator = variable_component[1]))[cellids[frame].argsort()])
+            data[i] = np.array(vlsvobj.read_variable(variable_component[0], operator = variable_component[1]))[cellids[frame].argsort()]
     else:
         for frame in range(end_frame - start_frame + 1):
             vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + f"bulk.{str(start_frame + frame).zfill(7)}.vlsv")
             frame = np.array(vlsvobj.read_variable(variable_component[0], operator = variable_component[1]))[cellids[frame].argsort()]
-            data.append(frame - np.mean(frame))
-
-    data = np.array(data)
+            data[i] = frame - np.mean(frame)
 
     shm = shared_memory.SharedMemory(create=True, size=data.nbytes)
     shm_array = np.ndarray(data.shape, dtype=data.dtype, buffer=shm.buf)
@@ -180,16 +180,16 @@ def chooser(object):
         Animation2D(object)
     elif object.animation_type == "triple":
         AnimationTriple(object)
-"""    elif object.animation_type == "fourier":
-        animation_fourier()
-    elif object.animation_type == "sf":
+    elif object.animation_type == "fourier":
+        AnimationFourier(object)
+"""    elif object.animation_type == "sf":
         animation_sf()
     elif object.animation_type == "kurtosis":
         animation_kurtosis() """
 
 # Launch a separate process for each AnimationSpecs object
-with mp.Pool(len(animations)) as process:
-    process.map(chooser, animations)
+""" with mp.Pool(len(animations)) as process:
+    process.map(chooser, animations) """
 
 # Delete shared memory
 for block in shared_blocks:

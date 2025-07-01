@@ -46,9 +46,20 @@ class AnimationTriple():
         shm_norm = shared_memory.SharedMemory(name=self.object.memory_space_norm)
         mag = np.ndarray(self.object.shape["x"], dtype=self.object.dtype, buffer=shm_norm.buf)
 
-        unitless_data_x = self.data_x / mag
-        unitless_data_y = self.data_y / mag
-        unitless_data_z = self.data_z / mag
+        mag_average = np.empty(self.frames)
+        for i in range(self.frames):
+            mag_average[i] = np.mean(mag[i])
+
+        unitless_data_x = np.empty(self.object.shape['x'])
+        unitless_data_y = np.empty(self.object.shape['y'])
+        unitless_data_z = np.empty(self.object.shape['z'])
+
+        for i in range(self.frames):
+            unitless_data_x[i] = self.data_x[i] / mag_average[i]
+        for i in range(self.frames):
+            unitless_data_y[i] = self.data_y[i] / mag_average[i]
+        for i in range(self.frames):
+            unitless_data_z[i] = self.data_z[i] / mag_average[i]
 
         fig, self.axes = plt.subplots(1,3, figsize=(26,8))
         fig.tight_layout(pad=4.0)
@@ -61,15 +72,15 @@ class AnimationTriple():
         else:
             self.Min = -self.Max
 
-        self.data_mesh_x = []
-        self.data_mesh_y = []
-        self.data_mesh_z = []
+        self.data_mesh_x = np.empty((self.frames,self.x_length,self.x_length))
+        self.data_mesh_y = np.empty((self.frames,self.x_length,self.x_length))
+        self.data_mesh_z = np.empty((self.frames,self.x_length,self.x_length))
         for i in range(self.frames):
-            self.data_mesh_x.append(unitless_data_x[i].reshape(-1, self.x_length))
+            self.data_mesh_x[i] = unitless_data_x[i].reshape(-1, self.x_length)
         for i in range(self.frames):
-            self.data_mesh_y.append(unitless_data_y[i].reshape(-1, self.x_length))
+            self.data_mesh_y[i] = unitless_data_y[i].reshape(-1, self.x_length)
         for i in range(self.frames):
-            self.data_mesh_z.append(unitless_data_z[i].reshape(-1, self.x_length))
+            self.data_mesh_z[i] = unitless_data_z[i].reshape(-1, self.x_length)
 
         self.p = [
             self.axes[0].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_x[0], cmap = "bwr", vmin=self.Min, vmax=self.Max),
@@ -80,7 +91,7 @@ class AnimationTriple():
         components = ["x","y","z"]
 
         for i in range(3):
-            title = f"$\\frac{{{"\\delta " + self.object.variable_name + "_" + components[i]}}}{{{'|' + self.object.variable_name + '|'}}}$"
+            title = f"$\\frac{{{"\\delta " + self.object.variable_name + "_" + components[i]}}}{{\\langle {self.object.variable_name}\\rangle}}$"
             self.axes[i].set_title(r'{}'.format(title), fontsize=20)
             self.axes[i].set_xlabel(r'$x/d_p$',fontsize=12)
             self.axes[i].set_ylabel(r'$y/d_p$', rotation=0, fontsize=12)
