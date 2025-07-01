@@ -3,7 +3,7 @@ import sys
 # Dictionary for translating instructions for VlsvReader
 translate = {"B":("vg_b_vol", 1e-9, "nT"),
                 "v":("proton/vg_v", 1e3, "km/s"),
-                "J":("vg_j", 1e-9, "\frac{nA}{m^2}"),
+                "J":("vg_j", 1e-9, r"$\frac{nA}{m^2}$"),
                 "rho":("proton/vg_rho", 1e6, r"$\frac{n}{m^3}$")}
 
 # Defining AnimationSpecs object and checking instructions
@@ -70,6 +70,6 @@ class AnimationSpecs():
         self.bulkpath = bulkpath
 
         self.name = name
-        self.memory_space = ""
-        self.shape = 0
+        self.memory_space = {}
+        self.shape = {}
         self.dtype = ""

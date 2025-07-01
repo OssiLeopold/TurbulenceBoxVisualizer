@@ -64,6 +64,9 @@ for object in animations:
     elif object[0] == "2D":
         names.append(f"{name_beginning}_{object[0]}_{object[1]}_{object[2]}_{object[3]}{filetype}")
 
+    elif object[0] == "triple":
+        names.append(f"{name_beginning}_{object[0]}_{object[1]}_{object[3]}{filetype}")
+
     elif object[1] == "fourier":
         
         if object[3][0] == "x" or object[3][0] == "y":
@@ -86,12 +89,12 @@ for i, object in enumerate(animations):
 def fetcher(variable_component):
     data = []
     if variable_component[0] == "rho" or variable_component[1] == "magnitude":
-        for frame in range(end_frame - start_frame):
+        for frame in range(end_frame - start_frame + 1):
             vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + f"bulk.{str(start_frame + frame).zfill(7)}.vlsv")
             data.append(
                 np.array(vlsvobj.read_variable(variable_component[0], operator = variable_component[1]))[cellids[frame].argsort()])
     else:
-        for frame in range(end_frame - start_frame):
+        for frame in range(end_frame - start_frame + 1):
             vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + f"bulk.{str(start_frame + frame).zfill(7)}.vlsv")
             frame = np.array(vlsvobj.read_variable(variable_component[0], operator = variable_component[1]))[cellids[frame].argsort()]
             data.append(frame - np.mean(frame))
@@ -130,7 +133,7 @@ for object in animations:
 
 # Fetch all cellids of the bulkfiles
 cellids = []
-for i in range(end_frame - start_frame):
+for i in range(end_frame - start_frame + 1):
     vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + f"bulk.{str(start_frame + i).zfill(7)}.vlsv")
     cellids.append(vlsvobj.read_variable("CellID"))
 
@@ -147,19 +150,26 @@ for object in animations:
             object.shape = block["shape"]
             object.dtype = block["dtype"]
             
-        if object.animation_type == "2D" and object.unitless == True and object.component != "pass":
-            for block_norm in shared_blocks:
-                if block_norm["variable"] == block["variable"] and block_norm["component"] == "magnitude":
-                    object.memory_space_norm = block_norm["name"]
+    if object.animation_type in ["2D", "triple"] and object.unitless == True:
+        for block in shared_blocks:
+            if block["variable"] == object.variable and block["component"] == "magnitude":
+                object.memory_space_norm = block["name"]
 
-        if object.animation_type == "triple" and object.unitless == True:
-            for block_norm in shared_blocks:
-                if block_norm["variable"] == block["variable"] and block_norm["component"] == "magnitude":
-                    object.memory_space_norm = block_norm["name"]
+    if object.animation_type == "triple":
+        for block in shared_blocks:
+            if object.variable == block["variable"] and block["component"] in ["x","y","z"]:
+                object.memory_space[block["component"]] = block["name"]
+                object.shape[block["component"]] = block["shape"]
+                object.dtype = block["dtype"]
+
+                
 
 # Debugging
 for object in animations:
-    print(object.memory_space_norm)
+    print(object.memory_space)
+
+""" for object in animations:
+    print(object.memory_space_norm) """
 
 for block in shared_blocks:
     print(block)
@@ -177,9 +187,9 @@ def chooser(object):
     elif object.animation_type == "kurtosis":
         animation_kurtosis() """
 
-""" # Launch a separate process for each AnimationSpecs object
+# Launch a separate process for each AnimationSpecs object
 with mp.Pool(len(animations)) as process:
-    process.map(chooser, animations) """
+    process.map(chooser, animations)
 
 # Delete shared memory
 for block in shared_blocks:
