@@ -34,6 +34,10 @@ class AnimationFourier():
             self.animation_principle()
         elif object.fourier_type == "trace":
             self.animation_trace()
+        elif object.fourier_type == "diag":
+            self.animation_diag()
+        elif object.fourier_type == "trace_diag":
+            self.animation_trace_diag()
 
     def animation_principle(self):
         fig, self.ax = plt.subplots()
@@ -58,6 +62,13 @@ class AnimationFourier():
 
         self.p = [self.ax.plot(2*np.pi * self.spatial_freq, self.data_mesh_ft[0])]
 
+        a = self.Max * (10**(-6))**2
+        b = self.Max * (10**(-6))**(5/3)
+
+        spatial_freq_for_curve = np.delete(self.spatial_freq,0)
+        self.p.append(self.ax.plot(2*np.pi * spatial_freq_for_curve[:self.x_length//2-1], a * (2*np.pi*spatial_freq_for_curve[:self.x_length//2-1])**(-2), label = "k**(-2)"))
+        self.p.append(self.ax.plot(2*np.pi * spatial_freq_for_curve[:self.x_length//2-1], b * (2*np.pi*spatial_freq_for_curve[:self.x_length//2-1])**(-5/3), label = "k**(-5/3)"))
+
         self.ax.set_xlabel(r'$k$')
         ylabel = f"$\\frac{{{self.object.unit_name}^2}}{{k}}$"
         self.ax.set_ylabel(r'{}'.format(ylabel))
@@ -65,6 +76,7 @@ class AnimationFourier():
         self.ax.set_xscale("log")
         self.ax.set_yscale("log")
         self.ax.grid(axis="y")
+        self.ax.legend()
 
         anim = animation.FuncAnimation(fig, self.update_principle, frames = self.frames, interval = 20)
         
@@ -132,4 +144,122 @@ class AnimationFourier():
 
     def update_trace(self,frame):
         self.p[0][0].set_data(2*np.pi * self.spatial_freq, self.data_mesh_trace[frame])
+        return self.p
+    
+    def animation_diag(self):
+        fig, self.ax = plt.subplots()
+        self.data_mesh = np.empty((self.frames, self.x_length, self.x_length))
+
+        for i in range(self.frames):
+            self.data_mesh[i] = self.data[i].reshape(-1, self.x_length)
+        
+        self.diag_mesh = np.empty((self.frames, self.x_length))
+        
+        if self.object.fourier_direc == 1:
+            for i in range(self.frames):
+                for j in range(self.x_length):
+                    self.diag_mesh[i][j] = self.data_mesh[i][j][j]
+        elif self.object.fourier_direc == 2:
+            for i in range(self.frames):
+                for j in range(self.x_length):
+                    self.diag_mesh[i][j] = self.data_mesh[i][-j-1][j]
+
+        self.data_mesh_ft = np.empty((self.frames, self.x_length//2), dtype="float64")
+        for i in range(self.frames):
+            self.data_mesh_ft[i] = np.abs(sp.fft.fft(self.diag_mesh[i])[:self.x_length//2])
+
+        self.spatial_freq = sp.fft.fftfreq(self.x_length, np.sqrt(2) * np.diff(self.x[0:self.x_length])[0])[:self.x_length//2]
+
+        self.Min = round(min(self.data_mesh_ft.flatten()))
+        self.Max = round(max(self.data_mesh_ft.flatten()))
+
+        self.p = [self.ax.plot(2*np.pi * self.spatial_freq, self.data_mesh_ft[0])]
+
+        a = self.Max * (10**(-6))**2
+        b = self.Max * (10**(-6))**(5/3)
+
+        spatial_freq_for_curve = np.delete(self.spatial_freq,0)
+        self.p.append(self.ax.plot(2*np.pi * spatial_freq_for_curve[:self.x_length//2-1], a * (2*np.pi*spatial_freq_for_curve[:self.x_length//2-1])**(-2), label = "k**(-2)"))
+        self.p.append(self.ax.plot(2*np.pi * spatial_freq_for_curve[:self.x_length//2-1], b * (2*np.pi*spatial_freq_for_curve[:self.x_length//2-1])**(-5/3), label = "k**(-5/3)"))
+
+        self.ax.set_xlabel(r'$k$')
+        ylabel = f"$\\frac{{{self.object.unit_name}^2}}{{k}}$"
+        self.ax.set_ylabel(r'{}'.format(ylabel))
+
+        self.ax.set_xscale("log")
+        self.ax.set_yscale("log")
+        self.ax.grid(axis="y")
+        self.ax.legend()
+
+        anim = animation.FuncAnimation(fig, self.update_diag, frames = self.frames, interval = 20)
+        
+        writer = FFMpegWriter(fps=5)
+        anim.save(self.object.name, writer = writer)
+        plt.close()
+
+    def update_diag(self,frame):
+        self.p[0][0].set_data(2*np.pi * self.spatial_freq, self.data_mesh_ft[frame])
+        return self.p
+    
+    def animation_trace_diag(self):
+        fig, self.ax = plt.subplots()
+        self.data_mesh = np.empty((self.frames, self.x_length, self.x_length))
+
+        for i in range(self.frames):
+            self.data_mesh[i] = self.data[i].reshape(-1, self.x_length)
+        
+        self.diag_mesh_1 = np.empty((self.frames, self.x_length))
+        self.diag_mesh_2 = np.empty((self.frames, self.x_length))
+        
+        for i in range(self.frames):
+            for j in range(self.x_length):
+                self.diag_mesh_1[i][j] = self.data_mesh[i][j][j]
+
+        for i in range(self.frames):
+            for j in range(self.x_length):
+                self.diag_mesh_2[i][j] = self.data_mesh[i][-j-1][j]
+
+
+
+        self.diag_mesh_1_ft = np.empty((self.frames, self.x_length//2), dtype="float64")
+        for i in range(self.frames):
+            self.diag_mesh_1_ft[i] = np.abs(sp.fft.fft(self.diag_mesh_1[i])[:self.x_length//2])
+
+        self.diag_mesh_2_ft = np.empty((self.frames, self.x_length//2), dtype="float64")
+        for i in range(self.frames):
+            self.diag_mesh_2_ft[i] = np.abs(sp.fft.fft(self.diag_mesh_2[i])[:self.x_length//2])
+
+        self.trace_mesh = self.diag_mesh_1_ft + self.diag_mesh_2_ft
+
+        self.spatial_freq = sp.fft.fftfreq(self.x_length, np.sqrt(2) * np.diff(self.x[0:self.x_length])[0])[:self.x_length//2]
+
+        self.Min = round(min(self.trace_mesh.flatten()))
+        self.Max = round(max(self.trace_mesh.flatten()))
+
+        self.p = [self.ax.plot(2*np.pi * self.spatial_freq, self.trace_mesh[0])]
+
+        a = self.Max * (10**(-6))**2
+        b = self.Max * (10**(-6))**(5/3)
+
+        spatial_freq_for_curve = np.delete(self.spatial_freq,0)
+        self.p.append(self.ax.plot(2*np.pi * spatial_freq_for_curve[:self.x_length//2-1], a * (2*np.pi*spatial_freq_for_curve[:self.x_length//2-1])**(-2), label = "k**(-2)"))
+        self.p.append(self.ax.plot(2*np.pi * spatial_freq_for_curve[:self.x_length//2-1], b * (2*np.pi*spatial_freq_for_curve[:self.x_length//2-1])**(-5/3), label = "k**(-5/3)"))
+
+        self.ax.set_xlabel(r'$k$')
+        ylabel = f"$\\frac{{{self.object.unit_name}^2}}{{k}}$"
+        self.ax.set_ylabel(r'{}'.format(ylabel))
+
+        self.ax.set_xscale("log")
+        self.ax.set_yscale("log")
+        self.ax.grid(axis="y")
+        self.ax.legend()
+
+        anim = animation.FuncAnimation(fig, self.update_trace_diag, frames = self.frames, interval = 20)
+        
+        writer = FFMpegWriter(fps=5)
+        anim.save(self.object.name, writer = writer)
+        plt.close()
+
+    def update_trace_diag(self,frame):
+        self.p[0][0].set_data(2*np.pi * self.spatial_freq, self.trace_mesh[frame])
         return self.p

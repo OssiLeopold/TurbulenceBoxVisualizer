@@ -12,7 +12,7 @@ class AnimationSpecs():
         self, animation_type, variable, component, 
         animation_specific, name, bulkpath
         ):
-        if animation_type not in ["2D", "triple", "fourier", "sd", "kurtosis"]:
+        if animation_type not in ["2D", "triple", "fourier", "sf", "kurtosis"]:
             print("animation_type defined incorrectly")
             print(name)
             sys.exit(1)
@@ -49,13 +49,16 @@ class AnimationSpecs():
                 self.fourier_loc_x = animation_specific[1]
                 self.fourier_loc_y = animation_specific[2]
 
-            elif animation_specific == "trace_diag":
+            elif animation_specific[0] == "trace_diag":
                 self.fourier_type = "trace_diag"
 
             else:
                 print("fourier spec defined incorrectly")
                 print(name)
                 sys.exit(1)
+
+        if animation_type == "sf":
+            self.delta_ls = animation_specific
 
         self.animation_type = animation_type
 

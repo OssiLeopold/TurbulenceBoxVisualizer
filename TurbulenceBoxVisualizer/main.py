@@ -9,6 +9,7 @@ from animation_specs import AnimationSpecs      # Class for animation object
 from animation_2D import Animation2D
 from animation_triple import AnimationTriple
 from animation_fourier import AnimationFourier
+from animation_sf import AnimationSF
 
 # Set path to simulation bulkfiles
 bulkpath = "/home/rxelmer/Documents/turso/bulks/sim22/"
@@ -17,7 +18,7 @@ x_length = vlsvobj.read_parameter("xcells_ini")
 
 # Enter number of frames to be animated. Define start frame if you want to start from some point.
 start_frame = 0
-end_frame = 234
+end_frame = 0
 
 # Define what animations are to be produced:
 # Each animation has to be in the from of a list, e.g: ["<animation_type>", "<variable>", "<component>", "<animation_spesific>"]
@@ -55,12 +56,7 @@ name_beginning = "TurbulenceBoxPlots/sim22_anim/sim22"
 filetype = ".mp4"
 
 animations = [
-             ("fourier", "B", "x",["trace",0.5,0.5]),("fourier", "B", "y",["trace",0.5,0.5]),("fourier", "B", "z",["trace",0.5,0.5]),
-             ("fourier", "v", "x",["trace",0.5,0.5]),("fourier", "v", "y",["trace",0.5,0.5]),("fourier", "v", "z",["trace",0.5,0.5]),
-             ("fourier", "B", "x",["x",0.5]),("fourier", "B", "y",["x",0.5]),("fourier", "B", "z",["x",0.5]),
-             ("fourier", "B", "x",["y",0.5]),("fourier", "B", "y",["y",0.5]),("fourier", "B", "z",["y",0.5]),
-             ("fourier", "v", "x",["x",0.5]),("fourier", "v", "y",["x",0.5]),("fourier", "v", "z",["x",0.5]),
-             ("fourier", "v", "x",["y",0.5]),("fourier", "v", "y",["y",0.5]),("fourier", "v", "z",["y",0.5])
+             ("sf", "B", "x",[2,4,8])
              ]
 
 # Generate names for objects
@@ -167,8 +163,6 @@ for object in animations:
                 object.shape[block["component"]] = block["shape"]
                 object.dtype = block["dtype"]
 
-                
-
 # Debugging
 for object in animations:
     print(object.memory_space)
@@ -187,9 +181,9 @@ def chooser(object):
         AnimationTriple(object)
     elif object.animation_type == "fourier":
         AnimationFourier(object)
-"""    elif object.animation_type == "sf":
-        animation_sf()
-    elif object.animation_type == "kurtosis":
+    elif object.animation_type == "sf":
+        AnimationSF(object)
+"""    elif object.animation_type == "kurtosis":
         animation_kurtosis() """
 
 # Launch a separate process for each AnimationSpecs object
