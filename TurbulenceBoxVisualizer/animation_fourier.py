@@ -2,6 +2,7 @@ import os
 import analysator as pt
 import numpy as np
 import matplotlib.pyplot as plt
+import scipy as sp
 from multiprocessing import shared_memory
 from matplotlib import animation
 from matplotlib.animation import FFMpegWriter
@@ -18,3 +19,117 @@ class AnimationFourier():
         self.object = object
         shm = shared_memory.SharedMemory(name=object.memory_space)
         self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
+
+        self.vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000000.vlsv")
+        self.cellids = self.vlsvobj.read_variable("CellID")
+
+        self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
+        self.x = np.array([self.vlsvobj.get_cell_coordinates(coord)[0] for coord in np.sort(self.cellids)])
+        y = np.array([self.vlsvobj.get_cell_coordinates(coord)[1] for coord in np.sort(self.cellids)])
+        self.x_mesh = self.x.reshape(-1,self.x_length)
+        self.y_mesh = y.reshape(-1,self.x_length)
+
+        self.frames = len(self.data)
+        if object.fourier_type == "principle":
+            self.animation_principle()
+        elif object.fourier_type == "trace":
+            self.animation_trace()
+
+    def animation_principle(self):
+        fig, self.ax = plt.subplots()
+        self.data_mesh = np.empty((self.frames, self.x_length, self.x_length))
+
+        if self.object.fourier_direc == "x":
+            for i in range(self.frames):
+                self.data_mesh[i] = self.data[i].reshape(-1, self.x_length)
+        elif self.object.fourier_direc == "y":
+            for i in range(self.frames):
+                self.data_mesh[i] = self.data[i].reshape(-1, self.x_length).T
+        
+        # Fourier transrom entire data_mesh
+        self.data_mesh_ft = np.empty((self.frames, self.x_length//2), dtype="float64")
+        for i in range(self.frames):
+            self.data_mesh_ft[i] = np.abs(sp.fft.fft(self.data_mesh[i][int(self.x_length * self.object.fourier_loc)])[:self.x_length//2])
+
+        self.spatial_freq = sp.fft.fftfreq(self.x_length, np.diff(self.x[0:self.x_length])[0])[:self.x_length//2]
+        
+        self.Min = round(min(self.data_mesh_ft.flatten()))
+        self.Max = round(max(self.data_mesh_ft.flatten()))
+
+        self.p = [self.ax.plot(2*np.pi * self.spatial_freq, self.data_mesh_ft[0])]
+
+        self.ax.set_xlabel(r'$k$')
+        ylabel = f"$\\frac{{{self.object.unit_name}^2}}{{k}}$"
+        self.ax.set_ylabel(r'{}'.format(ylabel))
+
+        self.ax.set_xscale("log")
+        self.ax.set_yscale("log")
+        self.ax.grid(axis="y")
+
+        anim = animation.FuncAnimation(fig, self.update_principle, frames = self.frames, interval = 20)
+        
+        writer = FFMpegWriter(fps=5)
+        anim.save(self.object.name, writer = writer)
+        plt.close()
+
+    def update_principle(self,frame):
+        self.p[0][0].set_data(2*np.pi * self.spatial_freq, self.data_mesh_ft[frame])
+        return self.p
+    
+    def animation_trace(self):
+        fig, self.ax = plt.subplots()
+        self.data_mesh_x = np.empty((self.frames, self.x_length, self.x_length))
+        self.data_mesh_y = np.empty((self.frames, self.x_length, self.x_length))
+
+        for i in range(self.frames):
+            self.data_mesh_x[i] = self.data[i].reshape(-1, self.x_length)
+
+        for i in range(self.frames):
+            self.data_mesh_y[i] = self.data[i].reshape(-1, self.x_length).T
+        
+        # Fourier transrom entire data_mesh
+        self.data_mesh_x_ft = np.empty((self.frames, self.x_length//2), dtype="float64")
+        self.data_mesh_y_ft = np.empty((self.frames, self.x_length//2), dtype="float64")
+        self.data_mesh_trace = np.empty((self.frames, self.x_length//2), dtype="float64")
+
+        for i in range(self.frames):
+            self.data_mesh_x_ft[i] = np.abs(sp.fft.fft(self.data_mesh_x[i][int(self.x_length * self.object.fourier_loc_x)])[:self.x_length//2])
+
+        for i in range(self.frames):
+            self.data_mesh_y_ft[i] = np.abs(sp.fft.fft(self.data_mesh_y[i][int(self.x_length * self.object.fourier_loc_y)])[:self.x_length//2])
+
+        self.data_mesh_trace = self.data_mesh_x_ft + self.data_mesh_y_ft
+
+        self.spatial_freq = sp.fft.fftfreq(self.x_length, np.diff(self.x[0:self.x_length])[0])[:self.x_length//2]
+        
+
+        self.Min = round(min(self.data_mesh_trace.flatten()),15)
+        self.Max = round(max(self.data_mesh_trace.flatten()),15)
+
+        self.p = [self.ax.plot(2*np.pi * self.spatial_freq, self.data_mesh_trace[0])]
+
+        a = self.Max * (10**(-6))**2
+        b = self.Max * (10**(-6))**(5/3)
+
+        spatial_freq_for_curve = np.delete(self.spatial_freq,0)
+        self.p.append(self.ax.plot(2*np.pi * spatial_freq_for_curve[:self.x_length//2-1], a * (2*np.pi*spatial_freq_for_curve[:self.x_length//2-1])**(-2), label = "k**(-2)"))
+        self.p.append(self.ax.plot(2*np.pi * spatial_freq_for_curve[:self.x_length//2-1], b * (2*np.pi*spatial_freq_for_curve[:self.x_length//2-1])**(-5/3), label = "k**(-5/3)"))
+
+        self.ax.set_xlabel(r'$k$')
+        ylabel = f"$\\frac{{{self.object.unit_name}^2}}{{k}}$"
+        self.ax.set_ylabel(r'{}'.format(ylabel), rotation = 0)
+
+        self.ax.set_xscale("log")
+        self.ax.set_yscale("log")
+        self.ax.grid(axis="y")
+        self.ax.legend()
+
+        anim = animation.FuncAnimation(fig, self.update_trace, frames = self.frames, interval = 20)
+        
+        writer = FFMpegWriter(fps=5)
+        anim.save(self.object.name, writer = writer)
+        plt.close()
+
+    def update_trace(self,frame):
+        self.p[0][0].set_data(2*np.pi * self.spatial_freq, self.data_mesh_trace[frame])
+        return self.p

@@ -60,9 +60,9 @@ class Animation2D():
         else:
             self.Min = -self.Max
 
-        self.data_mesh = []
+        self.data_mesh = np.empty((self.frames, self.x_length, self.x_length))
         for i in range(self.frames):
-            self.data_mesh.append(unitless_data[i].reshape(-1, self.x_length))
+            self.data_mesh[i] = (unitless_data[i].reshape(-1, self.x_length))
 
         self.p = [
             self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[0], cmap = "bwr", vmin=self.Min, vmax=self.Max)]
@@ -97,9 +97,9 @@ class Animation2D():
         else:
             self.Min = -self.Max
 
-        self.data_mesh = []
+        self.data_mesh = np.empty((self.frames, self.x_length, self.x_length))
         for i in range(self.frames):
-            self.data_mesh.append(self.data[i].reshape(-1, self.x_length))
+            self.data_mesh[i] = self.data[i].reshape(-1, self.x_length)
 
         self.p = [
             self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[0]/self.object.unit, cmap = "bwr", vmin=self.Min, vmax=self.Max)]

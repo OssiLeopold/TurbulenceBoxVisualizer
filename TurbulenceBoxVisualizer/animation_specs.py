@@ -36,7 +36,7 @@ class AnimationSpecs():
 
         if animation_type == "fourier":
             if animation_specific[0] == "x" or animation_specific[0] == "y":
-                self.fourier_type = "princpile"
+                self.fourier_type = "principle"
                 self.fourier_direc = animation_specific[0]
                 self.fourier_loc = animation_specific[1]
 
