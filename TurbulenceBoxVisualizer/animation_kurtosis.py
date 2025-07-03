@@ -35,6 +35,13 @@ class AnimationKurtosis():
         for i in range(self.frames):
                 self.data_mesh_y[i] = self.data[i].reshape(-1, self.x_length).T
 
+        self.ticks = []
+        self.tick_labels = []
+        for dl in self.object.delta_ls:
+            self.ticks.append(1/dl)
+            label = f"$1/{{{dl}}}$"
+            self.tick_labels.append(r"{}".format(label))
+
         self.timelabel = self.ax.text(0.98, 1.02, "",transform=self.ax.transAxes)
 
         anim = animation.FuncAnimation(fig, self.update, frames = self.frames, interval = 20)
@@ -72,7 +79,7 @@ class AnimationKurtosis():
             mean = np.mean(delta_array_container[i])
             SD = np.std(delta_array_container[i], mean=mean)
             delta_array_container[i] = (delta_array_container[i] - mean) / SD
-            kurtoi.append(kurtosis(delta_array_container[i], fisher=False, bias = False))
+            kurtoi.append(kurtosis(delta_array_container[i], fisher=False, bias =True) - 3)
 
         self.ax.plot(1 / np.array(self.object.delta_ls), kurtoi)
         
@@ -81,6 +88,10 @@ class AnimationKurtosis():
         ylabel = f"$K$"
         self.ax.set_xlabel(r'{}'.format(xlabel))
         self.ax.set_ylabel(r'{}'.format(ylabel))
+        self.ax.set_ylim(-2,4)
+
+        self.ax.set_xticks(self.ticks)
+        self.ax.set_xticklabels(self.tick_labels)
 
         self.timelabel.set_text(f"{self.time[frame]:.1f}s")
 

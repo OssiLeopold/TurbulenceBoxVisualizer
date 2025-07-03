@@ -5,6 +5,7 @@ from matplotlib import animation
 from matplotlib.animation import FFMpegWriter
 import numpy as np
 from multiprocessing import shared_memory
+import seaborn as sns
 
 plt.rcParams['animation.ffmpeg_path'] = "/home/rxelmer/Documents/turso/appl_local/ffmpeg/bin/ffmpeg"
 
@@ -93,8 +94,8 @@ class AnimationSF():
             SD = np.std(delta_array_container[i])
             delta_array_container[i] = (delta_array_container[i] - mean) / SD
 
-            ax.hist(delta_array_container[i], bins=30, density=True)
-            #sns.kdeplot(deltas_np[i], fill=True, ax=ax)
+            #ax.hist(delta_array_container[i], bins=50, density=True)
+            sns.kdeplot(delta_array_container[i], fill=True, ax=ax)
 
             mean = np.mean(delta_array_container[i])
             SD = np.std(delta_array_container[i])
