@@ -6,6 +6,7 @@ from matplotlib.animation import FFMpegWriter
 import numpy as np
 from scipy.stats import kurtosis
 from multiprocessing import shared_memory
+import numexpr as ne
 
 plt.rcParams['animation.ffmpeg_path'] = "/home/rxelmer/Documents/turso/appl_local/ffmpeg/bin/ffmpeg"
 
@@ -57,19 +58,28 @@ class AnimationKurtosis():
         
         for i, dl in enumerate(self.object.delta_ls):
             index = 0
-            for j in range(int(self.x_length/5), int(self.x_length/5*4)+1, int(self.x_length/5)):
-                value_slice_x = self.data_mesh_x[frame][j]
-                value_slice_y = self.data_mesh_y[frame][j]
+            for j in range(int(self.x_length/10), int(self.x_length/10*9)+1, int(self.x_length/10)):
+                value_slice = self.data_mesh_x[frame][j]
+                beginning = self.data_mesh_x[frame][j][:-dl]
+                end = self.data_mesh_x[frame][j][-dl:]
+                
+                value_slice_shifted = np.empty(self.x_length)
+                value_slice_shifted[dl:] = beginning
+                value_slice_shifted[:dl] = end
 
-                for k in range(self.x_length):
-                    #print(index)
-                    if k + dl >= self.x_length:
-                        delta_array_container[i][index] = value_slice_x[k+dl-self.x_length]-value_slice_x[k]
-                        delta_array_container[i][index+1] = value_slice_y[k+dl-self.x_length]-value_slice_y[k]
-                    else:
-                        delta_array_container[i][index] = value_slice_x[k+dl]-value_slice_x[k]
-                        delta_array_container[i][index+1] = value_slice_y[k+dl]-value_slice_y[k]
-                    index += 2
+                delta_array_container[i][index * self.x_length:((index+1)*self.x_length)] = ne.evaluate('value_slice - value_slice_shifted')
+                
+                value_slice = self.data_mesh_y[frame][j]
+                beginning = self.data_mesh_y[frame][j][:-dl]
+                end = self.data_mesh_y[frame][j][-dl:]
+                
+                value_slice_shifted = np.empty(self.x_length)
+                value_slice_shifted[dl:] = beginning
+                value_slice_shifted[:dl] = end
+
+                delta_array_container[i][((index+1)*self.x_length):((index+2)*self.x_length)] = ne.evaluate('value_slice - value_slice_shifted')
+
+                index += 2
 
         """ for i in range(4):    
             print(i,delta_array_container[i][-10:-1]) """
