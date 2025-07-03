@@ -10,6 +10,7 @@ from animation_2D import Animation2D
 from animation_triple import AnimationTriple
 from animation_fourier import AnimationFourier
 from animation_sf import AnimationSF
+from animation_kurtosis import AnimationKurtosis
 
 # Set path to simulation bulkfiles
 bulkpath = "/home/rxelmer/Documents/turso/bulks/sim22/"
@@ -18,7 +19,7 @@ x_length = vlsvobj.read_parameter("xcells_ini")
 
 # Enter number of frames to be animated. Define start frame if you want to start from some point.
 start_frame = 0
-end_frame = 0
+end_frame = 283
 
 # Define what animations are to be produced:
 # Each animation has to be in the from of a list, e.g: ["<animation_type>", "<variable>", "<component>", "<animation_spesific>"]
@@ -56,7 +57,7 @@ name_beginning = "TurbulenceBoxPlots/sim22_anim/sim22"
 filetype = ".mp4"
 
 animations = [
-             ("sf", "B", "x",[2,4,8])
+             ("sf", "B", "y",[30,120]),("kurtosis", "B", "y",[30,120])
              ]
 
 # Generate names for objects
@@ -91,12 +92,18 @@ for i, object in enumerate(animations):
 
 # Fetch data from vlsvfiles and place into shared memory
 def fetcher(variable_component):
-    data = np.empty((end_frame - start_frame + 1, x_length*x_length))
     if variable_component[0] == "rho" or variable_component[1] == "magnitude":
+        data = np.empty((end_frame - start_frame + 1, x_length*x_length))
         for frame in range(end_frame - start_frame + 1):
             vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + f"bulk.{str(start_frame + frame).zfill(7)}.vlsv")
             data[frame] = np.array(vlsvobj.read_variable(variable_component[0], operator = variable_component[1]))[cellids[frame].argsort()]
+    elif variable_component[0] == "time":
+        data = np.empty(end_frame - start_frame + 1)
+        for frame in range(end_frame - start_frame + 1):
+            vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + f"bulk.{str(start_frame + frame).zfill(7)}.vlsv")
+            data[frame] = vlsvobj.read_parameter("time")
     else:
+        data = np.empty((end_frame - start_frame + 1, x_length*x_length))
         for frame in range(end_frame - start_frame + 1):
             vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + f"bulk.{str(start_frame + frame).zfill(7)}.vlsv")
             frame_data = np.array(vlsvobj.read_variable(variable_component[0], operator = variable_component[1]))[cellids[frame].argsort()]
@@ -132,6 +139,9 @@ for object in animations:
     if object.animation_type == "triple" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be:
         variables_to_be.append((object.variable, "magnitude"))
 
+    if ("time", "pass") not in variables_to_be:
+        variables_to_be.append(("time", "pass"))
+
 # Fetch all cellids of the bulkfiles
 cellids = []
 for i in range(end_frame - start_frame + 1):
@@ -150,6 +160,10 @@ for object in animations:
             object.memory_space = block["name"]
             object.shape = block["shape"]
             object.dtype = block["dtype"]
+        elif block["variable"] == "time":
+            object.time = block["name"]
+            object.time_shape = block["shape"]
+            object.time_dtype = block["dtype"]
             
     if object.animation_type in ["2D", "triple"] and object.unitless == True:
         for block in shared_blocks:
@@ -166,6 +180,7 @@ for object in animations:
 # Debugging
 for object in animations:
     print(object.memory_space)
+    print(object.time)
 
 """ for object in animations:
     print(object.memory_space_norm) """
@@ -183,8 +198,8 @@ def chooser(object):
         AnimationFourier(object)
     elif object.animation_type == "sf":
         AnimationSF(object)
-"""    elif object.animation_type == "kurtosis":
-        animation_kurtosis() """
+    elif object.animation_type == "kurtosis":
+        AnimationKurtosis(object)
 
 # Launch a separate process for each AnimationSpecs object
 with mp.Pool(len(animations)) as process:
@@ -194,3 +209,6 @@ with mp.Pool(len(animations)) as process:
 for block in shared_blocks:
     block['shm'].close()
     block['shm'].unlink() 
+
+
+

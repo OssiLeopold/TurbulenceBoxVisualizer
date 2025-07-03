@@ -19,6 +19,9 @@ class Animation2D():
         shm = shared_memory.SharedMemory(name=object.memory_space)
         self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
 
+        shm_time = shared_memory.SharedMemory(name=object.time)
+        self.time = np.ndarray(object.time_shape, dtype=object.time_dtype, buffer=shm_time.buf)
+
         prot_plas_freq = np.sqrt(1e6 * (1.602176634 * 10**(-19))**2 / (8.8541878128 * 10**(-12) * 1.67262192595 * 10**(-27)))
         dp = 299792458 / prot_plas_freq
 
@@ -72,6 +75,7 @@ class Animation2D():
         self.ax.set_title(r'{}'.format(title), fontsize=16)
         self.ax.set_xlabel(r'$x/d_p$',fontsize=12)
         self.ax.set_ylabel(r'$y/d_p$', rotation=0, fontsize=12)
+        self.timelabel = self.ax.text(0.98, 1.02, "",transform=self.ax.transAxes)
         
 
         anim = animation.FuncAnimation(fig, self.unitless_update, frames = self.frames, interval = 20)
@@ -82,6 +86,7 @@ class Animation2D():
 
     def unitless_update(self,frame):
         self.p[0].remove()
+        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
         self.p = [
             self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max)]
         return self.p[0]
@@ -112,7 +117,7 @@ class Animation2D():
         cbar.set_label(r'{}'.format(self.object.unit_name), rotation = 0, fontsize=12, va="top")
         self.ax.set_xlabel(r'$x/d_p$',fontsize=12)
         self.ax.set_ylabel(r'$y/d_p$', rotation=0, fontsize=12)
-        
+        self.timelabel = self.ax.text(0.98, 1.02, "",transform=self.ax.transAxes)
 
         anim = animation.FuncAnimation(fig, self.unit_update, frames = self.frames, interval = 20)
 
@@ -122,6 +127,7 @@ class Animation2D():
 
     def unit_update(self,frame):
         self.p[0].remove()
+        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
         self.p = [
             self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[frame]/self.object.unit, cmap = "bwr", vmin=self.Min, vmax=self.Max)]
         return self.p[0]

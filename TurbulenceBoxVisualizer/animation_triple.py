@@ -23,9 +23,14 @@ class AnimationTriple():
         self.data_x = np.ndarray(object.shape["x"], dtype=object.dtype, buffer=shm_x.buf)
         self.data_y = np.ndarray(object.shape["y"], dtype=object.dtype, buffer=shm_y.buf)
         self.data_z = np.ndarray(object.shape["z"], dtype=object.dtype, buffer=shm_z.buf)
+        
+        shm_time = shared_memory.SharedMemory(name=object.time)
+        self.time = np.ndarray(object.time_shape, dtype=object.time_dtype, buffer=shm_time.buf)
 
         prot_plas_freq = np.sqrt(1e6 * (1.602176634 * 10**(-19))**2 / (8.8541878128 * 10**(-12) * 1.67262192595 * 10**(-27)))
         dp = 299792458 / prot_plas_freq
+        print(prot_plas_freq)
+        print(dp)
 
         self.vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000000.vlsv")
         self.cellids = self.vlsvobj.read_variable("CellID")
@@ -95,6 +100,8 @@ class AnimationTriple():
             self.axes[i].set_title(r'{}'.format(title), fontsize=20)
             self.axes[i].set_xlabel(r'$x/d_p$',fontsize=12)
             self.axes[i].set_ylabel(r'$y/d_p$', rotation=0, fontsize=12)
+
+        self.timelabel = self.axes[2].text(0.98, 1.02, "",transform=self.axes[2].transAxes, fontsize = 16)
         
 
         anim = animation.FuncAnimation(fig, self.unitless_update, frames = self.frames, interval = 20)
@@ -106,6 +113,7 @@ class AnimationTriple():
     def unitless_update(self,frame):
         for i in range(3):
             self.p[i].remove()
+        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
         self.p = [
             self.axes[0].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_x[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max),
             self.axes[1].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_y[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max),
@@ -151,6 +159,7 @@ class AnimationTriple():
             self.axes[i].set_xlabel(r'$x/d_p$',fontsize=12)
             self.axes[i].set_ylabel(r'$y/d_p$', rotation=0, fontsize=12)
         
+        self.timelabel = self.axes[2].text(0.98, 1.02, "",transform=self.axes[2].transAxes, fontsize = 16)
 
         anim = animation.FuncAnimation(fig, self.unit_update, frames = self.frames, interval = 20)
 
@@ -161,9 +170,27 @@ class AnimationTriple():
     def unit_update(self,frame):
         for i in range(3):
             self.p[i].remove()
+        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
         self.p = [
             self.axes[0].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_x[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max),
             self.axes[1].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_y[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max),
             self.axes[2].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_z[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max)
         ]
         return self.p
+    
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

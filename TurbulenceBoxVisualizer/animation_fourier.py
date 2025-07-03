@@ -20,6 +20,9 @@ class AnimationFourier():
         shm = shared_memory.SharedMemory(name=object.memory_space)
         self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
 
+        shm_time = shared_memory.SharedMemory(name=object.time)
+        self.time = np.ndarray(object.time_shape, dtype=object.time_dtype, buffer=shm_time.buf)
+
         self.vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000000.vlsv")
         self.cellids = self.vlsvobj.read_variable("CellID")
 
@@ -76,6 +79,8 @@ class AnimationFourier():
         self.ax.set_xscale("log")
         self.ax.set_yscale("log")
         self.ax.grid(axis="y")
+        self.timelabel = self.ax.text(0.98, 1.02, "",transform=self.ax.transAxes)
+
         self.ax.legend()
 
         anim = animation.FuncAnimation(fig, self.update_principle, frames = self.frames, interval = 20)
@@ -86,6 +91,7 @@ class AnimationFourier():
 
     def update_principle(self,frame):
         self.p[0][0].set_data(2*np.pi * self.spatial_freq, self.data_mesh_ft[frame])
+        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
         return self.p
     
     def animation_trace(self):
@@ -134,6 +140,8 @@ class AnimationFourier():
         self.ax.set_xscale("log")
         self.ax.set_yscale("log")
         self.ax.grid(axis="y")
+        self.timelabel = self.ax.text(0.98, 1.02, "",transform=self.ax.transAxes)
+
         self.ax.legend()
 
         anim = animation.FuncAnimation(fig, self.update_trace, frames = self.frames, interval = 20)
@@ -144,6 +152,7 @@ class AnimationFourier():
 
     def update_trace(self,frame):
         self.p[0][0].set_data(2*np.pi * self.spatial_freq, self.data_mesh_trace[frame])
+        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
         return self.p
     
     def animation_diag(self):
@@ -189,6 +198,8 @@ class AnimationFourier():
         self.ax.set_xscale("log")
         self.ax.set_yscale("log")
         self.ax.grid(axis="y")
+        self.timelabel = self.ax.text(0.98, 1.02, "",transform=self.ax.transAxes)
+
         self.ax.legend()
 
         anim = animation.FuncAnimation(fig, self.update_diag, frames = self.frames, interval = 20)
@@ -199,6 +210,7 @@ class AnimationFourier():
 
     def update_diag(self,frame):
         self.p[0][0].set_data(2*np.pi * self.spatial_freq, self.data_mesh_ft[frame])
+        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
         return self.p
     
     def animation_trace_diag(self):
@@ -252,6 +264,8 @@ class AnimationFourier():
         self.ax.set_xscale("log")
         self.ax.set_yscale("log")
         self.ax.grid(axis="y")
+        self.timelabel = self.ax.text(0.98, 1.02, "",transform=self.ax.transAxes)
+
         self.ax.legend()
 
         anim = animation.FuncAnimation(fig, self.update_trace_diag, frames = self.frames, interval = 20)
@@ -262,4 +276,5 @@ class AnimationFourier():
 
     def update_trace_diag(self,frame):
         self.p[0][0].set_data(2*np.pi * self.spatial_freq, self.trace_mesh[frame])
+        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
         return self.p
