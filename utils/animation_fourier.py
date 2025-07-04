@@ -1,4 +1,5 @@
 import os
+from configparser import ConfigParser
 import analysator as pt
 import numpy as np
 import matplotlib.pyplot as plt
@@ -7,11 +8,14 @@ from multiprocessing import shared_memory
 from matplotlib import animation
 from matplotlib.animation import FFMpegWriter
 
+config = ConfigParser()
+config.read(".TurbulenceBoxVisualizer.ini")
+
 # Telling FFMpegWriter the location of FFMpeg
-plt.rcParams['animation.ffmpeg_path'] = "/home/rxelmer/Documents/turso/appl_local/ffmpeg/bin/ffmpeg"
+plt.rcParams['animation.ffmpeg_path'] = config["paths"]["ffmpeg_path"]
 
 #enabling use of latex
-os.environ['PATH']='/home/rxelmer/Documents/turso/appl_local/tex-basic/texlive/2023/bin/x86_64-linux:'+ os.environ['PATH'] 
+os.environ['PATH']= config["paths"]["latex_path"] + os.environ['PATH'] 
 os.environ['PTNOLATEX']='1'
 
 class AnimationFourier():

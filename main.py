@@ -4,6 +4,8 @@ from multiprocessing import shared_memory
 import analysator as pt
 import numpy as np
 from multiprocessing.resource_tracker import unregister
+from configparser import ConfigParser
+import ast
 
 from utils.animation_specs import AnimationSpecs      # Class for animation object
 from utils.animation_2D import Animation2D
@@ -12,54 +14,22 @@ from utils.animation_fourier import AnimationFourier
 from utils.animation_sf import AnimationSF
 from utils.animation_kurtosis import AnimationKurtosis
 
+config = ConfigParser()
+config.read(".TurbulenceBoxVisualizer.ini")
+
 # Set path to simulation bulkfiles
-bulkpath = "/home/rxelmer/Documents/turso/bulks/sim22/"
+bulkpath = config["paths"]["bulkpath"]
 vlsvobj = pt.vlsvfile.VlsvReader(bulkpath + "bulk.0000000.vlsv")
 x_length = vlsvobj.read_parameter("xcells_ini")
 
 # Enter number of frames to be animated. Define start frame if you want to start from some point.
-start_frame = 283
-end_frame = 283
-
-# Define what animations are to be produced:
-# Each animation has to be in the from of a list, e.g: ["<animation_type>", "<variable>", "<component>", "<animation_spesific>"]
-
-# <animation_type>: 2D, fourier, sf, kurtosis or triple:
-#   - 2D: 2 dimensional heat map of specified variable.
-#   - fourier: fourier transform of given variable.
-#   - sf: structure function of given variable.
-#   - kurtosis: kurtosis of given variable.
-
-# <variable>: "B", "v", "J", "rho"
-
-# <component>: "x", "y", "z", or "total" for vector variable and "pass" for scalar variable.
-
-# <animation_spesific>:
-#   - 2D and tirple: "unit" or "unitless"
-
-#   - fourier:
-#       - ["x", <0-1>] -> x (or y) states the direction along which you want the slice to be done.
-#         <0-1> states the y (or x) coordinate where you want the slice to be done (0-1 -> y_min - y_max).
-# 
-#       - ["diag", <1 or 2>] -> if you want fourier in diagonal direction. Enter 1 if you want SW->NE.
-#                   Enter 2 if you want NW->SW.
-#
-#       - ["trace", <0-1>, <0-1>] -> If you want trace PSD.
-#          First number for x slice y-coord and second number for y slice x-coord.
-#
-#       - ["trace_diag"] -> for trace PSD for diag directions.
-#
-#   - sf: a list like [2,4,6...] which states the dl in cells for structure function.
-#
-#   - kurtosis: again a list like [2,4,6...].
+start_frame = int(config["settings"]["start_frame"])
+end_frame = int(config["settings"]["end_frame"])
  
-name_beginning = "TurbulenceBoxPlots/sim22_anim/sim22"
-filetype = ".mp4"
+name_beginning = config["settings"]["output_dir"] + "sim22"
+filetype = config["settings"]["filetype"]
 
-animations = [
-            ("sf", "B", "y",[10,20,40,80,160,320]),("sf", "B", "x",[10,20,40,80,160,320]),
-            ("kurtosis", "B", "y",[10,20,40,80,160,320]),("kurtosis", "B", "x",[10,20,40,80,160,320])
-             ]
+animations = list(ast.literal_eval(config["settings"]["animations"]))
 
 # Turn list into list of AnimationSpecs objects
 def cfg_to_AnimationSpecs(animations):

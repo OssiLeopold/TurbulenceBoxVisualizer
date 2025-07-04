@@ -1,6 +1,7 @@
+import os
+from configparser import ConfigParser
 import analysator as pt
 import matplotlib.pyplot as plt
-import os
 from matplotlib import animation
 from matplotlib.animation import FFMpegWriter
 import numpy as np
@@ -8,9 +9,12 @@ from scipy.stats import kurtosis
 from multiprocessing import shared_memory
 import numexpr as ne
 
-plt.rcParams['animation.ffmpeg_path'] = "/home/rxelmer/Documents/turso/appl_local/ffmpeg/bin/ffmpeg"
+config = ConfigParser()
+config.read(".TurbulenceBoxVisualizer.ini")
 
-os.environ['PATH']='/home/rxelmer/Documents/turso/appl_local/tex-basic/texlive/2023/bin/x86_64-linux:'+ os.environ['PATH'] 
+plt.rcParams['animation.ffmpeg_path'] = config["paths"]["ffmpeg_path"]
+
+os.environ['PATH']= config["paths"]["latex_path"] + os.environ['PATH'] 
 os.environ['PTNOLATEX']='1'
 
 class AnimationKurtosis():
