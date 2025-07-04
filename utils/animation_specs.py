@@ -10,21 +10,18 @@ translate = {"B":("vg_b_vol", 1e-9, "nT"),
 class AnimationSpecs():
     def __init__(
         self, animation_type, variable, component, 
-        animation_specific, name, bulkpath
+        animation_specific, bulkpath, filetype
         ):
         if animation_type not in ["2D", "triple", "fourier", "sf", "kurtosis"]:
             print("animation_type defined incorrectly")
-            print(name)
             sys.exit(1)
 
         if variable not in ["B", "v", "J", "rho"]:
             print("variable defined incorrectly")
-            print(name)
             sys.exit(1)
 
-        if name[-3:] not in ["mp4"]:
+        if filetype not in [".mp4"]:
             print("filetype defined incorrectly")
-            print(name)
             sys.exit(1)
 
         if animation_type == "2D" or animation_type == "triple":
@@ -54,7 +51,6 @@ class AnimationSpecs():
 
             else:
                 print("fourier spec defined incorrectly")
-                print(name)
                 sys.exit(1)
 
         if animation_type in ["sf","kurtosis"]:
@@ -72,7 +68,7 @@ class AnimationSpecs():
 
         self.bulkpath = bulkpath
 
-        self.name = name
+        self.name = ""
         self.memory_space = {}
         self.shape = {}
         self.dtype = ""
