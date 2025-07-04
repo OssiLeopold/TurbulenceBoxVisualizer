@@ -54,7 +54,7 @@ class AnimationKurtosis():
     def update(self,frame):
         self.ax.clear()
 
-        delta_array_container = np.empty((len(self.object.delta_ls), self.x_length*8))
+        delta_array_container = np.empty((len(self.object.delta_ls), self.x_length*18))
         
         for i, dl in enumerate(self.object.delta_ls):
             index = 0

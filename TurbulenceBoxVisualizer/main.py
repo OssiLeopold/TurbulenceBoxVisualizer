@@ -19,7 +19,7 @@ x_length = vlsvobj.read_parameter("xcells_ini")
 
 # Enter number of frames to be animated. Define start frame if you want to start from some point.
 start_frame = 0
-end_frame = 283
+end_frame = 10
 
 # Define what animations are to be produced:
 # Each animation has to be in the from of a list, e.g: ["<animation_type>", "<variable>", "<component>", "<animation_spesific>"]
@@ -57,8 +57,10 @@ name_beginning = "TurbulenceBoxPlots/sim22_anim/sim22"
 filetype = ".mp4"
 
 animations = [
-            ("kurtosis", "B", "y",[30,120])
+            ("sf", "B", "y",[1,2,3,4])
              ]
+
+"""  """
 
 # Generate names for objects
 names = []
@@ -79,6 +81,9 @@ for object in animations:
                 f"{name_beginning}_{object[0]}_{object[1]}_{object[2]}_{object[3][0]}_{object[3][1]}{filetype}")
         else:
             names.append(f"{name_beginning}_{object[0]}_{object[1]}_{object[2]}_{object[3][0]}{filetype}")
+        
+    elif object[0] == "sf":
+        names.append(f"{name_beginning}_{object[0]}_{object[1]}_{object[2]}_{object[3][0]}-{object[3][-1]}{filetype}")
     
     else:
         names.append(f"{name_beginning}_{object[0]}_{object[1]}_{object[2]}{filetype}")

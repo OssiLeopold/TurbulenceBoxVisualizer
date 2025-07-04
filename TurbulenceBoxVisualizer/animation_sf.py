@@ -72,30 +72,13 @@ class AnimationSF():
         delta_array_container = np.empty((len(self.object.delta_ls), 18 * self.x_length))
         
         for i, dl in enumerate(self.object.delta_ls):
-            index = 0
-            for j in range(int(self.x_length/10), int(self.x_length/10*9)+1, int(self.x_length/10)):
-                value_slice = self.data_mesh_x[frame][j]
-                beginning = self.data_mesh_x[frame][j][:-dl]
-                end = self.data_mesh_x[frame][j][-dl:]
-                
-                value_slice_shifted = np.empty(self.x_length)
-                value_slice_shifted[dl:] = beginning
-                value_slice_shifted[:dl] = end
+            slices = np.empty((18, self.x_length))
+            slices[:9] = self.data_mesh_x[frame][[50,100,150,200,250,300,350,400,450]]
+            slices[9:] = self.data_mesh_y[frame][[50,100,150,200,250,300,350,400,450]]
 
-                delta_array_container[i][index * self.x_length:((index+1)*self.x_length)] = ne.evaluate('value_slice - value_slice_shifted')
-                
-                value_slice = self.data_mesh_y[frame][j]
-                beginning = self.data_mesh_y[frame][j][:-dl]
-                end = self.data_mesh_y[frame][j][-dl:]
-                
-                value_slice_shifted = np.empty(self.x_length)
-                value_slice_shifted[dl:] = beginning
-                value_slice_shifted[:dl] = end
+            slices_shifted = np.roll(slices,dl)
 
-                delta_array_container[i][((index+1)*self.x_length):((index+2)*self.x_length)] = ne.evaluate('value_slice - value_slice_shifted')
-
-                index += 2
-
+            delta_array_container[i] = ne.evaluate('slices - slices_shifted').flatten()
 
         """ for i in range(4):    
             print(i,delta_array_container[i][-10:-1]) """
@@ -133,4 +116,5 @@ class AnimationSF():
 
         self.timelabel.set_text(f"{self.time[frame]:.1f}s")
 
-            
+    def slicer(self, slices, frame):
+        return self.data
