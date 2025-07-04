@@ -42,13 +42,12 @@ config["paths"] = {
 
 config["settings"] = {
     "start_frame" : 0,
-    "end_frame" : 5,
+    "end_frame" : 283,
 
     "output_dir" : "TurbulenceBoxPlots/sim22_anim/",
 
     "animations" : [
-            ("sf", "B", "y",[10,20,40,80,160,320]),("sf", "B", "x",[10,20,40,80,160,320]),
-            ("kurtosis", "B", "y",[10,20,40,80,160,320]),("kurtosis", "B", "x",[10,20,40,80,160,320])
+            ("rms", "J", "z", "unit")
             ],
 
     "filetype" : ".mp4"

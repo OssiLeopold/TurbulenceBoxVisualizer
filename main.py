@@ -13,6 +13,7 @@ from utils.animation_triple import AnimationTriple
 from utils.animation_fourier import AnimationFourier
 from utils.animation_sf import AnimationSF
 from utils.animation_kurtosis import AnimationKurtosis
+from utils.animation_rms import AnimationRMS
 
 config = ConfigParser()
 config.read(".TurbulenceBoxVisualizer.ini")
@@ -158,8 +159,6 @@ def mem_space_includer(animations, shared_blocks):
                     object.shape[block["component"]] = block["shape"]
                     object.dtype = block["dtype"]
 
-
-
 # Function for launching correct animation for each animation object
 def chooser(object):
     if object.animation_type == "2D":
@@ -172,6 +171,8 @@ def chooser(object):
         AnimationSF(object)
     elif object.animation_type == "kurtosis":
         AnimationKurtosis(object)
+    elif object.animation_type == "rms":
+        AnimationRMS(object)
 
 if __name__ == "__main__":
     animations = cfg_to_AnimationSpecs(animations)

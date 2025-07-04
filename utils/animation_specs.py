@@ -12,7 +12,7 @@ class AnimationSpecs():
         self, animation_type, variable, component, 
         animation_specific, bulkpath, filetype
         ):
-        if animation_type not in ["2D", "triple", "fourier", "sf", "kurtosis"]:
+        if animation_type not in ["2D", "triple", "fourier", "sf", "kurtosis", "rms"]:
             print("animation_type defined incorrectly")
             sys.exit(1)
 
