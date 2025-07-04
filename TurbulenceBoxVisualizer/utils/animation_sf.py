@@ -26,6 +26,9 @@ class AnimationSF():
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
         self.frames = len(self.data)
 
+        self.slices_pos = [i for i in range(500)]
+        self.slice_n = len(self.slices_pos)
+
         self.data_mesh_x = np.empty((self.frames, self.x_length, self.x_length))
         for i in range(self.frames):
                 self.data_mesh_x[i] = self.data[i].reshape(-1, self.x_length)
@@ -69,16 +72,16 @@ class AnimationSF():
         for ax in self.axes:
             ax.clear()
 
-        delta_array_container = np.empty((len(self.object.delta_ls), 18 * self.x_length))
+        delta_array_container = np.empty((len(self.object.delta_ls), 2 * self.slice_n * self.x_length))
         
         for i, dl in enumerate(self.object.delta_ls):
-            slices = np.empty((18, self.x_length))
-            slices[:9] = self.data_mesh_x[frame][[50,100,150,200,250,300,350,400,450]]
-            slices[9:] = self.data_mesh_y[frame][[50,100,150,200,250,300,350,400,450]]
+            slices = np.empty((2 * self.slice_n, self.x_length))
+            slices[:self.slice_n] = self.data_mesh_x[frame][self.slices_pos]
+            slices[self.slice_n:] = self.data_mesh_y[frame][self.slices_pos]
 
             slices_shifted = np.roll(slices,dl)
 
-            delta_array_container[i] = ne.evaluate('slices - slices_shifted').flatten()
+            delta_array_container[i] = (slices - slices_shifted).flatten()
 
         """ for i in range(4):    
             print(i,delta_array_container[i][-10:-1]) """
@@ -88,8 +91,8 @@ class AnimationSF():
             SD = np.std(delta_array_container[i])
             delta_array_container[i] = (delta_array_container[i] - mean) / SD
 
-            ax.hist(delta_array_container[i], bins=50, density=True)
-            #sns.kdeplot(delta_array_container[i], fill=True, ax=ax)
+            #ax.hist(delta_array_container[i], bins=100, density=True)
+            sns.kdeplot(delta_array_container[i], fill=True, ax=ax)
 
             mean = np.mean(delta_array_container[i])
             SD = np.std(delta_array_container[i])
@@ -115,6 +118,3 @@ class AnimationSF():
             ax.set_ylim(1e-3,1)
 
         self.timelabel.set_text(f"{self.time[frame]:.1f}s")
-
-    def slicer(self, slices, frame):
-        return self.data

@@ -23,6 +23,9 @@ class AnimationKurtosis():
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
         self.frames = len(self.data)
 
+        self.slices_pos = [i for i in range(500)]
+        self.slice_n = len(self.slices_pos)
+
         shm_time = shared_memory.SharedMemory(name=object.time)
         self.time = np.ndarray(object.time_shape, dtype=object.time_dtype, buffer=shm_time.buf)
 
@@ -54,32 +57,16 @@ class AnimationKurtosis():
     def update(self,frame):
         self.ax.clear()
 
-        delta_array_container = np.empty((len(self.object.delta_ls), self.x_length*18))
+        delta_array_container = np.empty((len(self.object.delta_ls), 2 * self.slice_n * self.x_length))
         
         for i, dl in enumerate(self.object.delta_ls):
-            index = 0
-            for j in range(int(self.x_length/10), int(self.x_length/10*9)+1, int(self.x_length/10)):
-                value_slice = self.data_mesh_x[frame][j]
-                beginning = self.data_mesh_x[frame][j][:-dl]
-                end = self.data_mesh_x[frame][j][-dl:]
-                
-                value_slice_shifted = np.empty(self.x_length)
-                value_slice_shifted[dl:] = beginning
-                value_slice_shifted[:dl] = end
+            slices = np.empty((2 * self.slice_n, self.x_length))
+            slices[:self.slice_n] = self.data_mesh_x[frame][self.slices_pos]
+            slices[self.slice_n:] = self.data_mesh_y[frame][self.slices_pos]
 
-                delta_array_container[i][index * self.x_length:((index+1)*self.x_length)] = ne.evaluate('value_slice - value_slice_shifted')
-                
-                value_slice = self.data_mesh_y[frame][j]
-                beginning = self.data_mesh_y[frame][j][:-dl]
-                end = self.data_mesh_y[frame][j][-dl:]
-                
-                value_slice_shifted = np.empty(self.x_length)
-                value_slice_shifted[dl:] = beginning
-                value_slice_shifted[:dl] = end
+            slices_shifted = np.roll(slices,dl)
 
-                delta_array_container[i][((index+1)*self.x_length):((index+2)*self.x_length)] = ne.evaluate('value_slice - value_slice_shifted')
-
-                index += 2
+            delta_array_container[i] = (slices - slices_shifted).flatten()
 
         """ for i in range(4):    
             print(i,delta_array_container[i][-10:-1]) """

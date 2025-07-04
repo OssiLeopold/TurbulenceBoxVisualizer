@@ -5,12 +5,12 @@ import analysator as pt
 import numpy as np
 from multiprocessing.resource_tracker import unregister
 
-from animation_specs import AnimationSpecs      # Class for animation object
-from animation_2D import Animation2D
-from animation_triple import AnimationTriple
-from animation_fourier import AnimationFourier
-from animation_sf import AnimationSF
-from animation_kurtosis import AnimationKurtosis
+from utils.animation_specs import AnimationSpecs      # Class for animation object
+from utils.animation_2D import Animation2D
+from utils.animation_triple import AnimationTriple
+from utils.animation_fourier import AnimationFourier
+from utils.animation_sf import AnimationSF
+from utils.animation_kurtosis import AnimationKurtosis
 
 # Set path to simulation bulkfiles
 bulkpath = "/home/rxelmer/Documents/turso/bulks/sim22/"
@@ -18,8 +18,8 @@ vlsvobj = pt.vlsvfile.VlsvReader(bulkpath + "bulk.0000000.vlsv")
 x_length = vlsvobj.read_parameter("xcells_ini")
 
 # Enter number of frames to be animated. Define start frame if you want to start from some point.
-start_frame = 0
-end_frame = 10
+start_frame = 283
+end_frame = 283
 
 # Define what animations are to be produced:
 # Each animation has to be in the from of a list, e.g: ["<animation_type>", "<variable>", "<component>", "<animation_spesific>"]
@@ -57,7 +57,8 @@ name_beginning = "TurbulenceBoxPlots/sim22_anim/sim22"
 filetype = ".mp4"
 
 animations = [
-            ("sf", "B", "y",[1,2,3,4])
+            ("sf", "B", "y",[10,20,40,80,160,320]),("sf", "B", "x",[10,20,40,80,160,320]),
+            ("kurtosis", "B", "y",[10,20,40,80,160,320]),("kurtosis", "B", "x",[10,20,40,80,160,320])
              ]
 
 """  """
