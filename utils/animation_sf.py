@@ -30,7 +30,8 @@ class AnimationSF():
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
         self.frames = len(self.data)
 
-        self.slices_pos = [i for i in range(500)]
+        self.slices_pos = [i for i in range(50,951,50)]
+        print(self.slices_pos)
         self.slice_n = len(self.slices_pos)
 
         self.data_mesh_x = np.empty((self.frames, self.x_length, self.x_length))
@@ -85,7 +86,7 @@ class AnimationSF():
 
             slices_shifted = np.roll(slices,dl)
 
-            delta_array_container[i] = (slices - slices_shifted).flatten()
+            delta_array_container[i] = ne.evaluate('slices - slices_shifted').flatten()
 
         """ for i in range(4):    
             print(i,delta_array_container[i][-10:-1]) """
@@ -122,3 +123,24 @@ class AnimationSF():
             ax.set_ylim(1e-3,1)
 
         self.timelabel.set_text(f"{self.time[frame]:.1f}s")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

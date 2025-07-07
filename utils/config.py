@@ -5,7 +5,7 @@ config = ConfigParser()
 config["paths"] = {
     "ffmpeg_path" : "/home/rxelmer/Documents/turso/appl_local/ffmpeg/bin/ffmpeg",
     "latex_path" : "/home/rxelmer/Documents/turso/appl_local/tex-basic/texlive/2023/bin/x86_64-linux:",
-    "bulkpath" : "/home/rxelmer/Documents/turso/bulks/sim22/"
+    "bulkpath" : "/home/rxelmer/Documents/turso/bulks/sim4/"
 }
 
 # Define what animations are to be produced:
@@ -42,12 +42,12 @@ config["paths"] = {
 
 config["settings"] = {
     "start_frame" : 0,
-    "end_frame" : 283,
+    "end_frame" : 50,
 
-    "output_dir" : "TurbulenceBoxPlots/sim22_anim/",
+    "output_dir" : "TurbulenceBoxPlots/control_anim/",
 
     "animations" : [
-            ("rms", "J", "z", "unit")
+                ("rms", "J", "z","unit"),("rms", "B", "pass","unit"),("rms", "v", "pass","unit")
             ],
 
     "filetype" : ".mp4"

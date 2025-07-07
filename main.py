@@ -27,7 +27,7 @@ x_length = vlsvobj.read_parameter("xcells_ini")
 start_frame = int(config["settings"]["start_frame"])
 end_frame = int(config["settings"]["end_frame"])
  
-name_beginning = config["settings"]["output_dir"] + "sim22"
+name_beginning = config["settings"]["output_dir"] + "control"
 filetype = config["settings"]["filetype"]
 
 animations = list(ast.literal_eval(config["settings"]["animations"]))
@@ -48,10 +48,10 @@ def namer(animations):
             name = f"{name_beginning}_{object.animation_type}_{object.variable_name}{filetype}"
 
         elif object.animation_type == "2D":
-            name = f"{name_beginning}_{object.animation_type}_{object.variable_name}_{object.component}_{object.animation_spesific}{filetype}"
+            name = f"{name_beginning}_{object.animation_type}_{object.variable_name}_{object.component}{filetype}"
 
         elif object.animation_type == "triple":
-            name = f"{name_beginning}_{object.animation_type}_{object.variable_name}_{object.animation_spesific}{filetype}"
+            name = f"{name_beginning}_{object.animation_type}_{object.variable_name}{filetype}"
 
         elif object.animation_type == "fourier":
             
@@ -81,6 +81,11 @@ def variables_to_be(animations):
     variables_to_be = [] # or not?
     for object in animations:
         if object.animation_type == "triple":
+            for component in ["x","y","z"]:
+                if (object.variable, component) not in variables_to_be:
+                    variables_to_be.append((object.variable, component))
+
+        elif object.animation_type == "rms" and object.component == "pass":
             for component in ["x","y","z"]:
                 if (object.variable, component) not in variables_to_be:
                     variables_to_be.append((object.variable, component))
@@ -158,6 +163,14 @@ def mem_space_includer(animations, shared_blocks):
                     object.memory_space[block["component"]] = block["name"]
                     object.shape[block["component"]] = block["shape"]
                     object.dtype = block["dtype"]
+
+        if object.animation_type == "rms" and object.component == "pass":
+            for block in shared_blocks:
+                if object.variable == block["variable"] and block["component"] in ["x","y","z"]:
+                    object.memory_space[block["component"]] = block["name"]
+                    object.shape[block["component"]] = block["shape"]
+                    object.dtype = block["dtype"]
+
 
 # Function for launching correct animation for each animation object
 def chooser(object):
