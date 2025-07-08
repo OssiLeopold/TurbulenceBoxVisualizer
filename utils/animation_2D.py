@@ -28,13 +28,18 @@ class Animation2D():
 
         prot_plas_freq = np.sqrt(1e6 * (1.602176634 * 10**(-19))**2 / (8.8541878128 * 10**(-12) * 1.67262192595 * 10**(-27)))
         dp = 299792458 / prot_plas_freq
+        print(dp)
 
         self.vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000000.vlsv")
         self.cellids = self.vlsvobj.read_variable("CellID")
 
         self.x_length = self.vlsvobj.read_parameter("xcells_ini")
-        x = np.array([self.vlsvobj.get_cell_coordinates(coord)[0] for coord in np.sort(self.cellids)])
-        y = np.array([self.vlsvobj.get_cell_coordinates(coord)[1] for coord in np.sort(self.cellids)])
+        coords = np.array(self.vlsvobj.get_cell_coordinates(np.sort(self.cellids))).T
+        x = coords[0]
+        y = coords[1]
+
+        print(x)
+        print(y)
         self.x_mesh = x.reshape(-1,self.x_length) / dp
         self.y_mesh = y.reshape(-1,self.x_length) / dp
 

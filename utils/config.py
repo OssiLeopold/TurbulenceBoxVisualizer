@@ -5,7 +5,7 @@ config = ConfigParser()
 config["paths"] = {
     "ffmpeg_path" : "/home/rxelmer/Documents/turso/appl_local/ffmpeg/bin/ffmpeg",
     "latex_path" : "/home/rxelmer/Documents/turso/appl_local/tex-basic/texlive/2023/bin/x86_64-linux:",
-    "bulkpath" : "/home/rxelmer/Documents/turso/bulks/sim4/"
+    "bulkpath" : "/home/rxelmer/Documents/turso/bulks/sim23/"
 }
 
 # Define what animations are to be produced:
@@ -42,12 +42,12 @@ config["paths"] = {
 
 config["settings"] = {
     "start_frame" : 0,
-    "end_frame" : 50,
+    "end_frame" : 61,
 
-    "output_dir" : "TurbulenceBoxPlots/control_anim/",
+    "output_dir" : "TurbulenceBoxPlots/sim23_anim/sim23",
 
     "animations" : [
-                ("rms", "J", "z","unit"),("rms", "B", "pass","unit"),("rms", "v", "pass","unit")
+                ("fourier", "B", "perp", ["2D"])
             ],
 
     "filetype" : ".mp4"
@@ -55,3 +55,6 @@ config["settings"] = {
 
 with open(".TurbulenceBoxVisualizer.ini", "w") as file:
     config.write(file)
+
+""" ("sf", "B", "x", [2,4,8,16,32,64,128,256,512]),("sf", "B", "y", [2,4,8,16,32,64,128,256,512]),
+                ("kurtosis", "B", "x", [2,4,8,16,32,64,128,256,512]),("kurtosis", "B", "y", [2,4,8,16,32,64,128,256,512]) """

@@ -30,7 +30,7 @@ class AnimationSF():
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
         self.frames = len(self.data)
 
-        self.slices_pos = [i for i in range(50,951,50)]
+        self.slices_pos = [i for i in range(500,501,50)]
         print(self.slices_pos)
         self.slice_n = len(self.slices_pos)
 
@@ -59,7 +59,7 @@ class AnimationSF():
         fig.tight_layout(pad=4.0)
         suptitle = f"${{{object.variable_name}}}_{{{object.component}}}$ structure function"
         fig.suptitle(r'{}'.format(suptitle))
-        self.timelabel = fig.text(0.6, 0.98, 'Centered at top of figure', ha='center', va='top', fontsize = 16)
+        self.timelabel = fig.text(0.6, 0.98, '', ha='center', va='top', fontsize = 16)
         
         self.axes = self.axes.flatten()
 
@@ -77,12 +77,12 @@ class AnimationSF():
         for ax in self.axes:
             ax.clear()
 
-        delta_array_container = np.empty((len(self.object.delta_ls), 2 * self.slice_n * self.x_length))
+        delta_array_container = np.empty((len(self.object.delta_ls), self.slice_n * self.x_length))
         
         for i, dl in enumerate(self.object.delta_ls):
-            slices = np.empty((2 * self.slice_n, self.x_length))
+            slices = np.empty((self.slice_n, self.x_length))
             slices[:self.slice_n] = self.data_mesh_x[frame][self.slices_pos]
-            slices[self.slice_n:] = self.data_mesh_y[frame][self.slices_pos]
+            #slices[self.slice_n:] = self.data_mesh_y[frame][self.slices_pos]
 
             slices_shifted = np.roll(slices,dl)
 
@@ -120,7 +120,7 @@ class AnimationSF():
 
             ax.set_xlim(-6,6)
             ax.set_yscale("log")
-            ax.set_ylim(1e-3,1)
+            ax.set_ylim(1e-4,1)
 
         self.timelabel.set_text(f"{self.time[frame]:.1f}s")
 

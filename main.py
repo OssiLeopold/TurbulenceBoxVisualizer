@@ -27,7 +27,7 @@ x_length = vlsvobj.read_parameter("xcells_ini")
 start_frame = int(config["settings"]["start_frame"])
 end_frame = int(config["settings"]["end_frame"])
  
-name_beginning = config["settings"]["output_dir"] + "control"
+name_beginning = config["settings"]["output_dir"]
 filetype = config["settings"]["filetype"]
 
 animations = list(ast.literal_eval(config["settings"]["animations"]))
@@ -87,6 +87,11 @@ def variables_to_be(animations):
 
         elif object.animation_type == "rms" and object.component == "pass":
             for component in ["x","y","z"]:
+                if (object.variable, component) not in variables_to_be:
+                    variables_to_be.append((object.variable, component))
+
+        elif object.component == "perp":
+            for component in ["x","y"]:
                 if (object.variable, component) not in variables_to_be:
                     variables_to_be.append((object.variable, component))
 
@@ -157,6 +162,13 @@ def mem_space_includer(animations, shared_blocks):
                 if block["variable"] == object.variable and block["component"] == "magnitude":
                     object.memory_space_norm = block["name"]
 
+        if object.component == "perp":
+            for block in shared_blocks:
+                if block["variable"] == object.variable and block["component"] in ["x","y"]:
+                    object.memory_space[block["component"]] = block["name"]
+                    object.shape[block["component"]] = block["shape"]
+                    object.dtype = block["dtype"]
+
         if object.animation_type == "triple":
             for block in shared_blocks:
                 if object.variable == block["variable"] and block["component"] in ["x","y","z"]:
@@ -174,6 +186,7 @@ def mem_space_includer(animations, shared_blocks):
 
 # Function for launching correct animation for each animation object
 def chooser(object):
+    
     if object.animation_type == "2D":
         Animation2D(object)
     elif object.animation_type == "triple":

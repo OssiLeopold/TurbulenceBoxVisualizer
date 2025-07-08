@@ -21,22 +21,29 @@ os.environ['PTNOLATEX']='1'
 class AnimationFourier():
     def __init__(self, object):
         self.object = object
-        shm = shared_memory.SharedMemory(name=object.memory_space)
-        self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
-
+        
+        if object.component in ["x","y","z"]:
+            shm = shared_memory.SharedMemory(name=object.memory_space)
+            self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
+            self.frames = len(self.data)
+        elif object.component == "perp":
+            shm_x = shared_memory.SharedMemory(name=object.memory_space["x"])
+            shm_y = shared_memory.SharedMemory(name=object.memory_space["y"])
+            self.data_x = np.ndarray(object.shape["x"], dtype=object.dtype, buffer=shm_x.buf)
+            self.data_y = np.ndarray(object.shape["y"], dtype=object.dtype, buffer=shm_y.buf)
+            self.frames = len(self.data_x)
+        
         shm_time = shared_memory.SharedMemory(name=object.time)
         self.time = np.ndarray(object.time_shape, dtype=object.time_dtype, buffer=shm_time.buf)
-
+        
         self.vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000000.vlsv")
         self.cellids = self.vlsvobj.read_variable("CellID")
 
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
-        self.x = np.array([self.vlsvobj.get_cell_coordinates(coord)[0] for coord in np.sort(self.cellids)])
-        y = np.array([self.vlsvobj.get_cell_coordinates(coord)[1] for coord in np.sort(self.cellids)])
-        self.x_mesh = self.x.reshape(-1,self.x_length)
-        self.y_mesh = y.reshape(-1,self.x_length)
-
-        self.frames = len(self.data)
+        coords = np.array(self.vlsvobj.get_cell_coordinates(np.sort(self.cellids))).T
+        self.x = coords[0]
+        print("heh")
+        
         if object.fourier_type == "principle":
             self.animation_principle()
         elif object.fourier_type == "trace":
@@ -45,6 +52,72 @@ class AnimationFourier():
             self.animation_diag()
         elif object.fourier_type == "trace_diag":
             self.animation_trace_diag()
+        elif object.fourier_type == "2D":
+            self.animation_2D_ft()
+
+    def animation_2D_ft(self):
+        fig, self.ax = plt.subplots()
+
+        PSD_2D_x = np.empty((self.frames, self.x_length, self.x_length))
+        PSD_2D_y = np.empty((self.frames, self.x_length, self.x_length))
+        for i in range(self.frames):
+            PSD_2D_x[i] = np.abs(sp.fft.fftshift(sp.fft.fft2(self.data_x[i].reshape(-1, self.x_length), workers = 8)))**2
+            PSD_2D_y[i] = np.abs(sp.fft.fftshift(sp.fft.fft2(self.data_y[i].reshape(-1, self.x_length), workers = 8)))**2
+
+        PSD_2D_perp = PSD_2D_x + PSD_2D_y
+
+        print(PSD_2D_perp[0])
+
+        kx = 2 * np.pi * sp.fft.fftshift(sp.fft.fftfreq(self.x_length, np.diff(self.x[0:self.x_length])[0]))
+        ky = 2 * np.pi * sp.fft.fftshift(sp.fft.fftfreq(self.x_length, np.diff(self.x[0:self.x_length])[0]))
+        KX, KY = np.meshgrid(kx, ky)
+        K = np.sqrt(KX**2 + KY**2)
+        print(K)
+
+        k_bins = np.linspace(0, np.max(K), 501)
+        self.k_vals = 0.5 * (k_bins[1:] + k_bins[:-1])
+
+        self.psd1D_perp = np.empty((self.frames, len(self.k_vals)))
+        
+        for frame in range(self.frames):
+            for i in range(len(k_bins) - 1):
+                mask = (K >= k_bins[i]) & (K < k_bins[i+1])
+                self.psd1D_perp[frame][i] = PSD_2D_perp[frame][mask].sum()
+
+        Min = min(self.psd1D_perp.flatten())
+        Max = max(self.psd1D_perp.flatten())
+
+        self.p = [self.ax.plot([], [])]
+
+        a = Max * (10**(-6))**2
+        b = Max * (10**(-6))**(5/3)
+        c = Max * (10**(-6))**3
+
+        self.p.append(self.ax.plot(self.k_vals*227710.76740230687, a * (self.k_vals)**(-2), label = "k**(-2)"))
+        self.p.append(self.ax.plot(self.k_vals*227710.76740230687, b * (self.k_vals)**(-5/3), label = "k**(-5/3)"))
+        self.p.append(self.ax.plot(self.k_vals*227710.76740230687, c * (self.k_vals)**(-3), label = "k**(-3)"))
+
+        self.ax.set_xscale("log")
+        self.ax.set_yscale("log")
+
+        #self.ax.set_ylim(1e-6, Max*2)
+        self.ax.set_xlim(0,self.k_vals[-1]*27710.76740230687)
+
+        """ for i in range(1,11):
+            self.ax.axvline(x = 2*np.pi/(300*10**5/i)) """
+
+        self.timelabel = self.ax.text(0.98, 1.02, "", transform=self.ax.transAxes)
+
+        anim = animation.FuncAnimation(fig, self.update_2D, frames = self.frames, interval = 20)
+        
+        writer = FFMpegWriter(fps=5)
+        anim.save(self.object.name, writer = writer)
+        plt.close()
+
+    def update_2D(self, frame):
+        self.p[0][0].set_data(self.k_vals*227710.76740230687, self.psd1D_perp[frame])
+        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
+        return self.p
 
     def animation_principle(self):
         fig, self.ax = plt.subplots()
@@ -57,10 +130,12 @@ class AnimationFourier():
             for i in range(self.frames):
                 self.data_mesh[i] = self.data[i].reshape(-1, self.x_length).T
         
-        # Fourier transrom entire data_mesh
-        self.data_mesh_ft = np.empty((self.frames, self.x_length//2), dtype="float64")
+        # Fourier transrom data_mesh at specified location
+        self.data_mesh_ft = np.empty((self.frames, self.x_length//2))
         for i in range(self.frames):
             self.data_mesh_ft[i] = np.abs(sp.fft.fft(self.data_mesh[i][int(self.x_length * self.object.fourier_loc)])[:self.x_length//2])
+
+        print(self.data_mesh_ft[0])
 
         self.spatial_freq = sp.fft.fftfreq(self.x_length, np.diff(self.x[0:self.x_length])[0])[:self.x_length//2]
         
