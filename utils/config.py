@@ -57,4 +57,4 @@ with open(".TurbulenceBoxVisualizer.ini", "w") as file:
     config.write(file)
 
 """ ("sf", "B", "x", [2,4,8,16,32,64,128,256,512]),("sf", "B", "y", [2,4,8,16,32,64,128,256,512]),
-                ("kurtosis", "B", "x", [2,4,8,16,32,64,128,256,512]),("kurtosis", "B", "y", [2,4,8,16,32,64,128,256,512]) """
+                ("kurtosis", "B", "x", [2,4,8,16,32,64,128,256,512]),("kurtosis", "B", "y", [2,4,8,16,32,64,128,256,512]) ("rms", "B", "magnitude", "unit"),("rms", "v", "magnitude", "unit"),"""

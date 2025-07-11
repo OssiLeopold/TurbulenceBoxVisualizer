@@ -42,7 +42,6 @@ class AnimationFourier():
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
         coords = np.array(self.vlsvobj.get_cell_coordinates(np.sort(self.cellids))).T
         self.x = coords[0]
-        print("heh")
         
         if object.fourier_type == "principle":
             self.animation_principle()
@@ -58,53 +57,72 @@ class AnimationFourier():
     def animation_2D_ft(self):
         fig, self.ax = plt.subplots()
 
-        PSD_2D_x = np.empty((self.frames, self.x_length, self.x_length))
-        PSD_2D_y = np.empty((self.frames, self.x_length, self.x_length))
-        for i in range(self.frames):
-            PSD_2D_x[i] = np.abs(sp.fft.fftshift(sp.fft.fft2(self.data_x[i].reshape(-1, self.x_length), workers = 8)))**2
-            PSD_2D_y[i] = np.abs(sp.fft.fftshift(sp.fft.fft2(self.data_y[i].reshape(-1, self.x_length), workers = 8)))**2
+        # Reshape raw data into mesh
+        data_x_mesh = self.data_x.reshape((self.frames, self.x_length, self.x_length))
+        data_y_mesh = self.data_x.reshape((self.frames, self.x_length, self.x_length))
 
-        PSD_2D_perp = PSD_2D_x + PSD_2D_y
+        # Fourier transfrom meshshes
+        data_x_mesh_ft = np.abs(sp.fft.fft2(data_x_mesh, workers = 8, axes=(-2, -1)))
+        data_y_mesh_ft = np.abs(sp.fft.fft2(data_y_mesh, workers = 8, axes=(-2, -1)))
 
-        print(PSD_2D_perp[0])
+        # |F_perp|**2 = |F_x|**2 + |F_y|**2
+        PSD_2D_perp = data_x_mesh_ft**2 + data_y_mesh_ft**2
+        
+        nbins = 250
+        dx = np.diff(self.x[0:self.x_length])[0]
 
-        kx = 2 * np.pi * sp.fft.fftshift(sp.fft.fftfreq(self.x_length, np.diff(self.x[0:self.x_length])[0]))
-        ky = 2 * np.pi * sp.fft.fftshift(sp.fft.fftfreq(self.x_length, np.diff(self.x[0:self.x_length])[0]))
-        KX, KY = np.meshgrid(kx, ky)
-        K = np.sqrt(KX**2 + KY**2)
-        print(K)
+        k_xy = 2 * np.pi * sp.fft.fftfreq(self.x_length, dx)
+        KX, KY = np.meshgrid(k_xy, k_xy)
+        K_perp = np.sqrt(KX**2 + KY**2)
 
-        k_bins = np.linspace(0, np.max(K), 501)
-        self.k_vals = 0.5 * (k_bins[1:] + k_bins[:-1])
+        """ self.p = [self.ax.pcolormesh(self.KX,self.KY,self.PSD_2D_perp[0])]
+        self.ax.set_xlim(-0.0000025,0.0000025)
+        self.ax.set_ylim(-0.0000025,0.0000025)
+        fig.colorbar(self.p[0]) """
 
-        self.psd1D_perp = np.empty((self.frames, len(self.k_vals)))
+        k_bin_edges = np.linspace(0, np.max(K_perp), num = nbins + 1) 
+        bin_idx = np.digitize(K_perp.ravel(), k_bin_edges) - 1
+        bin_idx = np.clip(bin_idx, 0, nbins - 1)
+
+        self.PSD_1D_perp = np.empty((self.frames, nbins))
         
         for frame in range(self.frames):
-            for i in range(len(k_bins) - 1):
-                mask = (K >= k_bins[i]) & (K < k_bins[i+1])
-                self.psd1D_perp[frame][i] = PSD_2D_perp[frame][mask].sum()
+            self.PSD_1D_perp[frame] = np.bincount(bin_idx, weights = PSD_2D_perp[frame].ravel(), minlength=nbins)
 
-        Min = min(self.psd1D_perp.flatten())
-        Max = max(self.psd1D_perp.flatten())
+        self.PSD_1D_perp *= (dx * dx) / (nbins * nbins)
+
+        Min = min(self.PSD_1D_perp.flatten())
+        Max = max(self.PSD_1D_perp.flatten())
 
         self.p = [self.ax.plot([], [])]
 
-        a = Max * (10**(-6))**2
-        b = Max * (10**(-6))**(5/3)
-        c = Max * (10**(-6))**3
+        prot_plas_freq = np.sqrt(1e6 * (1.602176634 * 10**(-19))**2 / (8.8541878128 * 10**(-12) * 1.67262192595 * 10**(-27)))
+        self.dp = 299792458 / prot_plas_freq
+        self.k_vals = 0.5 * (k_bin_edges[1:] + k_bin_edges[:-1]) * self.dp
+        a = Max * (10**(-6) * self.dp)**2
+        b = Max * (10**(-6) * self.dp)**(5/3)
+        c = Max * (10**(-6) * self.dp)**3
 
-        self.p.append(self.ax.plot(self.k_vals*227710.76740230687, a * (self.k_vals)**(-2), label = "k**(-2)"))
-        self.p.append(self.ax.plot(self.k_vals*227710.76740230687, b * (self.k_vals)**(-5/3), label = "k**(-5/3)"))
-        self.p.append(self.ax.plot(self.k_vals*227710.76740230687, c * (self.k_vals)**(-3), label = "k**(-3)"))
+        self.p.append(self.ax.plot(self.k_vals, a * (self.k_vals)**(-2), label = "k**(-2)"))
+        self.p.append(self.ax.plot(self.k_vals, b * (self.k_vals)**(-5/3), label = "k**(-5/3)"))
+        self.p.append(self.ax.plot(self.k_vals, c * (self.k_vals)**(-3), label = "k**(-3)"))
 
         self.ax.set_xscale("log")
         self.ax.set_yscale("log")
 
-        #self.ax.set_ylim(1e-6, Max*2)
-        self.ax.set_xlim(0,self.k_vals[-1]*27710.76740230687)
+        self.ax.set_ylim(1e-10, Max*2)
+        self.ax.set_xlim(self.k_vals[0]*0.9,self.k_vals[-1])
+
+        xlabel = f"$k_{{\\perp}}d_p$"
+        self.ax.set_xlabel(r"{}".format(xlabel))
+        ylabel = f"$P(k_{{\\perp}})$"
+        self.ax.set_ylabel(r"{}".format(ylabel))
+        self.ax.legend()
 
         """ for i in range(1,11):
             self.ax.axvline(x = 2*np.pi/(300*10**5/i)) """
+      
+        
 
         self.timelabel = self.ax.text(0.98, 1.02, "", transform=self.ax.transAxes)
 
@@ -115,9 +133,13 @@ class AnimationFourier():
         plt.close()
 
     def update_2D(self, frame):
-        self.p[0][0].set_data(self.k_vals*227710.76740230687, self.psd1D_perp[frame])
+        self.p[0][0].set_data(self.k_vals, self.PSD_1D_perp[frame])
         self.timelabel.set_text(f"{self.time[frame]:.1f}s")
         return self.p
+    
+    def update_2D_test(self, frame):
+        self.p[0].remove()
+        self.p[0] = self.ax.pcolormesh(self.KX,self.KY,self.PSD_2D_perp[frame])
 
     def animation_principle(self):
         fig, self.ax = plt.subplots()

@@ -21,7 +21,7 @@ os.environ['PTNOLATEX']='1'
 class AnimationRMS():
     def __init__(self, object):
         self.object = object
-        if object.component in ["x","y","z"]:
+        if object.component in ["x","y","z","magnitude"]:
             self.animation_one()
         else:
             self.animation_all()
@@ -49,7 +49,7 @@ class AnimationRMS():
         self.ax.set_ylim(min([min(self.rms), min(self.rms)])*0.9, max([max(self.rms), max(self.rms)])*1.1)
         self.ax.legend()
         
-        anim = animation.FuncAnimation(fig, self.update_one, frames = self.frames, interval = 20)
+        anim = animation.FuncAnimation(fig, self.update_one, frames = self.frames + 1, interval = 20)
         
         writer = FFMpegWriter(fps=5)
         anim.save(self.object.name, writer=writer)
@@ -89,7 +89,7 @@ class AnimationRMS():
         self.ax.set_ylim(min([min(self.rms_perp), min(self.rms_par)])*0.9, max([max(self.rms_perp), max(self.rms_par)])*1.1)
         self.ax.legend()
         
-        anim = animation.FuncAnimation(fig, self.update_all, frames = self.frames, interval = 20)
+        anim = animation.FuncAnimation(fig, self.update_all, frames = self.frames + 1, interval = 20)
         
         writer = FFMpegWriter(fps=5)
         anim.save(self.object.name, writer=writer)

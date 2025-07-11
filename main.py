@@ -100,7 +100,7 @@ def variables_to_be(animations):
         
         if object.animation_type == "2D" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be and object.component != "pass":
             variables_to_be.append((object.variable, "magnitude"))
-        
+
         if object.animation_type == "triple" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be:
             variables_to_be.append((object.variable, "magnitude"))
 
@@ -222,7 +222,7 @@ if __name__ == "__main__":
         print(object.time)
 
     """ for object in animations:
-        print(object.memory_space_norm) """
+        print(object.memory_space_norm)"""
 
     for block in shared_blocks:
         print(block)
