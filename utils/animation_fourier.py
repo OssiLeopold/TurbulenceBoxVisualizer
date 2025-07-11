@@ -68,17 +68,12 @@ class AnimationFourier():
         # |F_perp|**2 = |F_x|**2 + |F_y|**2
         PSD_2D_perp = data_x_mesh_ft**2 + data_y_mesh_ft**2
         
-        nbins = 250
+        nbins = 50
         dx = np.diff(self.x[0:self.x_length])[0]
 
         k_xy = 2 * np.pi * sp.fft.fftfreq(self.x_length, dx)
         KX, KY = np.meshgrid(k_xy, k_xy)
         K_perp = np.sqrt(KX**2 + KY**2)
-
-        """ self.p = [self.ax.pcolormesh(self.KX,self.KY,self.PSD_2D_perp[0])]
-        self.ax.set_xlim(-0.0000025,0.0000025)
-        self.ax.set_ylim(-0.0000025,0.0000025)
-        fig.colorbar(self.p[0]) """
 
         k_bin_edges = np.linspace(0, np.max(K_perp), num = nbins + 1) 
         bin_idx = np.digitize(K_perp.ravel(), k_bin_edges) - 1
