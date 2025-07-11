@@ -68,7 +68,7 @@ class AnimationFourier():
         # |F_perp|**2 = |F_x|**2 + |F_y|**2
         PSD_2D_perp = data_x_mesh_ft**2 + data_y_mesh_ft**2
         
-        nbins = 50
+        nbins = 500
         dx = np.diff(self.x[0:self.x_length])[0]
 
         k_xy = 2 * np.pi * sp.fft.fftfreq(self.x_length, dx)
