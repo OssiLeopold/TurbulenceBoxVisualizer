@@ -47,7 +47,7 @@ config["settings"] = {
     "output_dir" : "TurbulenceBoxPlots/sim27_anim/sim27",
 
     "animations" : [
-                ("fourier", "B", "perp", ["2D"])
+	                ("fourier", "B", "perp", ["2D"])
             ],
 
     "filetype" : ".mp4"
