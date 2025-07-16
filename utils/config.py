@@ -3,9 +3,9 @@ from configparser import ConfigParser
 config = ConfigParser()
 
 config["paths"] = {
-    "ffmpeg_path" : "/home/rxelmer/Documents/turso/appl_local/ffmpeg/bin/ffmpeg",
-    "latex_path" : "/home/rxelmer/Documents/turso/appl_local/tex-basic/texlive/2023/bin/x86_64-linux:",
-    "bulkpath" : "/home/rxelmer/Documents/turso/bulks/sim27/"
+    "ffmpeg_path" : "/home/elmer/turso/appl/ffmpeg/bin/ffmpeg",
+    "latex_path" : "/home/elmer/turso/appl/tex-basic/texlive/2023/bin/x86_64-linux:",
+    "bulkpath" : "/home/elmer/turso/bulks/sim27/"
 }
 
 # Define what animations are to be produced:
@@ -42,9 +42,9 @@ config["paths"] = {
 
 config["settings"] = {
     "start_frame" : 0,
-    "end_frame" : 0,
+    "end_frame" : 172,
 
-    "output_dir" : "TurbulenceBoxPlots/sim27_anim/sim27",
+    "output_dir" : "Animations/sim27/sim27",
 
     "animations" : [
 	                ("fourier", "B", "perp", ["2D"])

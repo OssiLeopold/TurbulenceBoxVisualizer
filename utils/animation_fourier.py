@@ -51,10 +51,12 @@ class AnimationFourier():
             self.animation_diag()
         elif object.fourier_type == "trace_diag":
             self.animation_trace_diag()
+        elif object.fourier_type == "1D":
+            self.animation_1D_PSD()
         elif object.fourier_type == "2D":
-            self.animation_2D_ft()
+            self.animation_2D_PSD()
 
-    def animation_2D_ft(self):
+    def animation_1D_PSD(self):
         fig, self.ax = plt.subplots()
 
         # Reshape raw data into mesh
@@ -114,27 +116,58 @@ class AnimationFourier():
         self.ax.set_ylabel(r"{}".format(ylabel))
         self.ax.legend()
 
-        """ for i in range(1,11):
-            self.ax.axvline(x = 2*np.pi/(300*10**5/i)) """
-      
-        
-
         self.timelabel = self.ax.text(0.98, 1.02, "", transform=self.ax.transAxes)
 
-        anim = animation.FuncAnimation(fig, self.update_2D, frames = self.frames, interval = 20)
+        anim = animation.FuncAnimation(fig, self.update_1D_PSD, frames = self.frames, interval = 20)
         
         writer = FFMpegWriter(fps=5)
         anim.save(self.object.name, writer = writer)
         plt.close()
 
-    def update_2D(self, frame):
+    def update_1D_PSD(self, frame):
         self.p[0][0].set_data(self.k_vals, self.PSD_1D_perp[frame])
         self.timelabel.set_text(f"{self.time[frame]:.1f}s")
         return self.p
-    
-    def update_2D_test(self, frame):
+
+    def animation_2D_PSD(self):
+        fig, self.ax = plt.subplots()
+
+        # Reshape raw data into mesh
+        data_x_mesh = self.data_x.reshape((self.frames, self.x_length, self.x_length))
+        data_y_mesh = self.data_x.reshape((self.frames, self.x_length, self.x_length))
+
+        # Fourier transfrom meshshes
+        data_x_mesh_ft = np.abs(sp.fft.fftshift(sp.fft.fft2(data_x_mesh, workers = 8, axes=(-2, -1)), axes = (-2,-1)))
+        data_y_mesh_ft = np.abs(sp.fft.fftshift(sp.fft.fft2(data_y_mesh, workers = 8, axes=(-2, -1)), axes = (-2,-1)))
+
+        # |F_perp|**2 = |F_x|**2 + |F_y|**2
+        self.PSD_2D_perp = data_x_mesh_ft**2 + data_y_mesh_ft**2
+
+        self.Max = np.max(self.PSD_2D_perp.ravel())
+
+        dx = np.diff(self.x[0:self.x_length])[0]
+
+        k_xy = 2 * np.pi * sp.fft.fftshift(sp.fft.fftfreq(self.x_length, dx))
+        self.KX, self.KY = np.meshgrid(k_xy, k_xy)
+
+        self.p = [self.ax.pcolormesh(self.KX, self.KY, self.PSD_2D_perp[0], vmin=0, vmax=self.Max)]
+
+        cbar = fig.colorbar(self.p[0])
+        self.ax.set_xlim(-0.5e-5, 0.5e-5)
+        self.ax.set_ylim(-0.5e-5, 0.5e-5)
+
+        self.timelabel = self.ax.text(0.98, 1.02, "", transform=self.ax.transAxes)
+
+        anim = animation.FuncAnimation(fig, self.update_2D_PSD, frames = self.frames, interval = 20)
+        
+        writer = FFMpegWriter(fps=5)
+        anim.save(self.object.name, writer = writer)
+        plt.close()
+
+    def update_2D_PSD(self, frame):
         self.p[0].remove()
-        self.p[0] = self.ax.pcolormesh(self.KX,self.KY,self.PSD_2D_perp[frame])
+        self.p[0] = self.ax.pcolormesh(self.KX, self.KY, self.PSD_2D_perp[frame], vmin=0, vmax=self.Max)
+        return self.p
 
     def animation_principle(self):
         fig, self.ax = plt.subplots()
