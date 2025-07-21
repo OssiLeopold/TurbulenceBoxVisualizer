@@ -215,17 +215,17 @@ if __name__ == "__main__":
         shared_blocks = process.map(fetcher, variables)
 
     mem_space_includer(animations, shared_blocks)
-
+    
     # Debugging
-    for object in animations:
+    """ for object in animations:
         print(object.memory_space)
-        print(object.time)
+        print(object.time) """
 
     """ for object in animations:
         print(object.memory_space_norm)"""
 
-    for block in shared_blocks:
-        print(block)
+    """ for block in shared_blocks:
+        print(block) """
 
     # Launch a separate process for each AnimationSpecs object
     with mp.Pool(len(animations)) as process:

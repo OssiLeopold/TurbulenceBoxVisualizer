@@ -54,20 +54,11 @@ class AnimationTriple():
         shm_norm = shared_memory.SharedMemory(name=self.object.memory_space_norm)
         mag = np.ndarray(self.object.shape["x"], dtype=self.object.dtype, buffer=shm_norm.buf)
 
-        mag_average = np.empty(self.frames)
-        for i in range(self.frames):
-            mag_average[i] = np.mean(mag[i])
+        mag_average = np.mean(mag, axis=1).reshape((self.frames, 1))
 
-        unitless_data_x = np.empty(self.object.shape['x'])
-        unitless_data_y = np.empty(self.object.shape['y'])
-        unitless_data_z = np.empty(self.object.shape['z'])
-
-        for i in range(self.frames):
-            unitless_data_x[i] = self.data_x[i] / mag_average[i]
-        for i in range(self.frames):
-            unitless_data_y[i] = self.data_y[i] / mag_average[i]
-        for i in range(self.frames):
-            unitless_data_z[i] = self.data_z[i] / mag_average[i]
+        unitless_data_x = self.data_x / mag_average
+        unitless_data_y = self.data_y / mag_average
+        unitless_data_z = self.data_z / mag_average
 
         fig, self.axes = plt.subplots(1,3, figsize=(26,8))
         fig.tight_layout(pad=4.0)
@@ -80,15 +71,9 @@ class AnimationTriple():
         else:
             self.Min = -self.Max
 
-        self.data_mesh_x = np.empty((self.frames,self.x_length,self.x_length))
-        self.data_mesh_y = np.empty((self.frames,self.x_length,self.x_length))
-        self.data_mesh_z = np.empty((self.frames,self.x_length,self.x_length))
-        for i in range(self.frames):
-            self.data_mesh_x[i] = unitless_data_x[i].reshape(-1, self.x_length)
-        for i in range(self.frames):
-            self.data_mesh_y[i] = unitless_data_y[i].reshape(-1, self.x_length)
-        for i in range(self.frames):
-            self.data_mesh_z[i] = unitless_data_z[i].reshape(-1, self.x_length)
+        self.data_mesh_x = unitless_data_x.reshape((self.frames, self.x_length, self.x_length))
+        self.data_mesh_y = unitless_data_y.reshape((self.frames, self.x_length, self.x_length))
+        self.data_mesh_z = unitless_data_y.reshape((self.frames, self.x_length, self.x_length))
 
         self.p = [
             self.axes[0].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_x[0], cmap = "bwr", vmin=self.Min, vmax=self.Max),
@@ -128,23 +113,20 @@ class AnimationTriple():
         fig, self.axes = plt.subplots(1,3, figsize=(26,8))
         fig.tight_layout(pad=4.0)
 
-        self.Min = round(min(np.array([self.data_x,self.data_y,self.data_z]).flatten()), 20) / self.object.unit
-        self.Max = round(max(np.array([self.data_x,self.data_y,self.data_z]).flatten()), 20) / self.object.unit
+        self.Min = np.min(np.array([self.data_x,self.data_y,self.data_z]).flatten()) / self.object.unit
+        self.Max = np.max(np.array([self.data_x,self.data_y,self.data_z]).flatten()) / self.object.unit
+
+        print(self.Min)
+        print(self.Max)
 
         if abs(self.Min) > abs(self.Max):
             self.Max = -self.Min
         else:
             self.Min = -self.Max
 
-        self.data_mesh_x = []
-        self.data_mesh_y = []
-        self.data_mesh_z = []
-        for i in range(self.frames):
-            self.data_mesh_x.append(self.data_x[i].reshape(-1, self.x_length)/ self.object.unit)
-        for i in range(self.frames):
-            self.data_mesh_y.append(self.data_y[i].reshape(-1, self.x_length)/ self.object.unit)
-        for i in range(self.frames):
-            self.data_mesh_z.append(self.data_z[i].reshape(-1, self.x_length)/ self.object.unit)
+        self.data_mesh_x = self.data_x.reshape((self.frames, self.x_length, self.x_length)) / self.object.unit
+        self.data_mesh_y = self.data_y.reshape((self.frames, self.x_length, self.x_length)) / self.object.unit
+        self.data_mesh_z = self.data_z.reshape((self.frames, self.x_length, self.x_length)) / self.object.unit
 
         self.p = [
             self.axes[0].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_x[0], cmap = "bwr", vmin=self.Min, vmax=self.Max),

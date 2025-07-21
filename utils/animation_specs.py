@@ -50,6 +50,9 @@ class AnimationSpecs():
             elif animation_specific[0] == "trace_diag":
                 self.fourier_type = "trace_diag"
 
+            elif animation_specific[0] == "1D":
+                self.fourier_type = "1D"
+
             elif animation_specific[0] == "2D":
                 self.fourier_type = "2D"
 

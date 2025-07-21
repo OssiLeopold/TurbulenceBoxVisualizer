@@ -5,6 +5,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import scipy as sp
 from multiprocessing import shared_memory
+from matplotlib.colors import LogNorm
 from matplotlib import animation
 from matplotlib.animation import FFMpegWriter
 
@@ -40,8 +41,7 @@ class AnimationFourier():
         self.cellids = self.vlsvobj.read_variable("CellID")
 
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
-        coords = np.array(self.vlsvobj.get_cell_coordinates(np.sort(self.cellids))).T
-        self.x = coords[0]
+        self.x = np.array(self.vlsvobj.get_cell_coordinates(np.sort(self.cellids))).T[0]
         
         if object.fourier_type == "principle":
             self.animation_principle()
@@ -61,7 +61,7 @@ class AnimationFourier():
 
         # Reshape raw data into mesh
         data_x_mesh = self.data_x.reshape((self.frames, self.x_length, self.x_length))
-        data_y_mesh = self.data_x.reshape((self.frames, self.x_length, self.x_length))
+        data_y_mesh = self.data_y.reshape((self.frames, self.x_length, self.x_length))
 
         # Fourier transfrom meshshes
         data_x_mesh_ft = np.abs(sp.fft.fft2(data_x_mesh, workers = 8, axes=(-2, -1)))
@@ -69,6 +69,8 @@ class AnimationFourier():
 
         # |F_perp|**2 = |F_x|**2 + |F_y|**2
         PSD_2D_perp = data_x_mesh_ft**2 + data_y_mesh_ft**2
+
+        del data_x_mesh_ft, data_y_mesh_ft
         
         nbins = 500
         dx = np.diff(self.x[0:self.x_length])[0]
@@ -76,6 +78,8 @@ class AnimationFourier():
         k_xy = 2 * np.pi * sp.fft.fftfreq(self.x_length, dx)
         KX, KY = np.meshgrid(k_xy, k_xy)
         K_perp = np.sqrt(KX**2 + KY**2)
+
+        del k_xy, KX, KY
 
         k_bin_edges = np.linspace(0, np.max(K_perp), num = nbins + 1) 
         bin_idx = np.digitize(K_perp.ravel(), k_bin_edges) - 1
@@ -85,6 +89,8 @@ class AnimationFourier():
         
         for frame in range(self.frames):
             self.PSD_1D_perp[frame] = np.bincount(bin_idx, weights = PSD_2D_perp[frame].ravel(), minlength=nbins)
+
+        del PSD_2D_perp
 
         self.PSD_1D_perp *= (dx * dx) / (nbins * nbins)
 
@@ -143,6 +149,9 @@ class AnimationFourier():
         # |F_perp|**2 = |F_x|**2 + |F_y|**2
         self.PSD_2D_perp = data_x_mesh_ft**2 + data_y_mesh_ft**2
 
+        del data_x_mesh_ft, data_y_mesh_ft
+
+        self.Min = np.min(self.PSD_2D_perp.ravel())
         self.Max = np.max(self.PSD_2D_perp.ravel())
 
         dx = np.diff(self.x[0:self.x_length])[0]
@@ -150,11 +159,16 @@ class AnimationFourier():
         k_xy = 2 * np.pi * sp.fft.fftshift(sp.fft.fftfreq(self.x_length, dx))
         self.KX, self.KY = np.meshgrid(k_xy, k_xy)
 
-        self.p = [self.ax.pcolormesh(self.KX, self.KY, self.PSD_2D_perp[0], vmin=0, vmax=self.Max)]
+        self.p = [self.ax.pcolormesh(self.KX, self.KY, self.PSD_2D_perp[0], norm=LogNorm(vmin=1e-9, vmax=self.Max))]
 
         cbar = fig.colorbar(self.p[0])
-        self.ax.set_xlim(-0.5e-5, 0.5e-5)
-        self.ax.set_ylim(-0.5e-5, 0.5e-5)
+        self.ax.set_xlim(-10e-6, 10e-6)
+        self.ax.set_ylim(-10e-6, 10e-6)
+
+        x_label = f"$k_{{x}}$"
+        y_label = f"$k_{{y}}$"
+        self.ax.set_xlabel(r'{}'.format(x_label))
+        self.ax.set_ylabel(r'{}'.format(y_label))
 
         self.timelabel = self.ax.text(0.98, 1.02, "", transform=self.ax.transAxes)
 
@@ -166,7 +180,7 @@ class AnimationFourier():
 
     def update_2D_PSD(self, frame):
         self.p[0].remove()
-        self.p[0] = self.ax.pcolormesh(self.KX, self.KY, self.PSD_2D_perp[frame], vmin=0, vmax=self.Max)
+        self.p[0] = self.ax.pcolormesh(self.KX, self.KY, self.PSD_2D_perp[frame], norm=LogNorm(vmin=1e-9, vmax=self.Max))
         return self.p
 
     def animation_principle(self):

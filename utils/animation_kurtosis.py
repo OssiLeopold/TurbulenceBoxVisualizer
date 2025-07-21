@@ -89,7 +89,7 @@ class AnimationKurtosis():
         ylabel = f"$K$"
         self.ax.set_xlabel(r'{}'.format(xlabel))
         self.ax.set_ylabel(r'{}'.format(ylabel))
-        self.ax.set_ylim(-2,4)
+        #self.ax.set_ylim(-2,4)
 
         self.ax.set_xticks(self.ticks)
         self.ax.set_xticklabels(self.tick_labels)
