@@ -73,7 +73,7 @@ class AnimationTriple():
 
         self.data_mesh_x = unitless_data_x.reshape((self.frames, self.x_length, self.x_length))
         self.data_mesh_y = unitless_data_y.reshape((self.frames, self.x_length, self.x_length))
-        self.data_mesh_z = unitless_data_y.reshape((self.frames, self.x_length, self.x_length))
+        self.data_mesh_z = unitless_data_z.reshape((self.frames, self.x_length, self.x_length))
 
         self.p = [
             self.axes[0].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_x[0], cmap = "bwr", vmin=self.Min, vmax=self.Max),

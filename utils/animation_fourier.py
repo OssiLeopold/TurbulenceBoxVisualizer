@@ -140,7 +140,7 @@ class AnimationFourier():
 
         # Reshape raw data into mesh
         data_x_mesh = self.data_x.reshape((self.frames, self.x_length, self.x_length))
-        data_y_mesh = self.data_x.reshape((self.frames, self.x_length, self.x_length))
+        data_y_mesh = self.data_y.reshape((self.frames, self.x_length, self.x_length))
 
         # Fourier transfrom meshshes
         data_x_mesh_ft = np.abs(sp.fft.fftshift(sp.fft.fft2(data_x_mesh, workers = 8, axes=(-2, -1)), axes = (-2,-1)))
