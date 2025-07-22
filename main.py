@@ -23,12 +23,9 @@ bulkpath = config["paths"]["bulkpath"]
 vlsvobj = pt.vlsvfile.VlsvReader(bulkpath + "bulk.0000000.vlsv")
 x_length = vlsvobj.read_parameter("xcells_ini")
 
-# Enter number of frames to be animated. Define start frame if you want to start from some point.
+# Get start frame and end frame from config
 start_frame = int(config["settings"]["start_frame"])
 end_frame = int(config["settings"]["end_frame"])
- 
-name_beginning = config["settings"]["output_dir"]
-filetype = config["settings"]["filetype"]
 
 animations = list(ast.literal_eval(config["settings"]["animations"]))
 
@@ -36,37 +33,10 @@ animations = list(ast.literal_eval(config["settings"]["animations"]))
 def cfg_to_AnimationSpecs(animations):
     for i, object in enumerate(animations):
         animations[i] = AnimationSpecs(
-            animation_type = object[0], variable = object[1], component = object[2], 
-            animation_specific = object[3], bulkpath=bulkpath, filetype = filetype
+            animation_type = object[0], variable = object[1],
+            component = object[2], animation_specific = object[3]
         )
     return animations
-
-# Generate names for objects
-def namer(animations):
-    for object in animations:
-        if object.variable == "rho":
-            name = f"{name_beginning}_{object.animation_type}_{object.variable_name}{filetype}"
-
-        elif object.animation_type == "2D":
-            name = f"{name_beginning}_{object.animation_type}_{object.variable_name}_{object.component}{filetype}"
-
-        elif object.animation_type == "triple":
-            name = f"{name_beginning}_{object.animation_type}_{object.variable_name}{filetype}"
-
-        elif object.animation_type == "fourier":
-            
-            if object.fourier_direc == "x" or object.fourier_direc == "y":
-                name = f"{name_beginning}_{object.animation_type}_{object.variable_name}_{object.component}_{object.fourier_direc}_{object.fourier_loc}{filetype}"
-            else:
-                name = f"{name_beginning}_{object.animation_type}_{object.variable_name}_{object.component}_{object.fourier_type}{filetype}"
-            
-        elif object.animation_type == "sf":
-            name = f"{name_beginning}_{object.animation_type}_{object.variable_name}_{object.component}_{object.delta_ls[0]}-{object.delta_ls[-1]}{filetype}"
-        
-        else:
-            name = f"{name_beginning}_{object.animation_type}_{object.variable_name}_{object.component}{filetype}"
-        
-        object.name = name
 
 # Fetch all cellids of the bulkfiles
 def cellids_fetcher(object):
@@ -202,7 +172,6 @@ def chooser(object):
 
 if __name__ == "__main__":
     animations = cfg_to_AnimationSpecs(animations)
-    namer(animations)
 
     global cellids
     cellids = cellids_fetcher(animations[0])
@@ -224,8 +193,8 @@ if __name__ == "__main__":
     """ for object in animations:
         print(object.memory_space_norm)"""
 
-    """ for block in shared_blocks:
-        print(block) """
+    for block in shared_blocks:
+        print(block)
 
     # Launch a separate process for each AnimationSpecs object
     with mp.Pool(len(animations)) as process:

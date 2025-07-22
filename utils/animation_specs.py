@@ -1,4 +1,12 @@
 import sys
+from configparser import ConfigParser
+
+config = ConfigParser()
+config.read(".TurbulenceBoxVisualizer.ini")
+
+bulkpath = config["paths"]["bulkpath"]
+name_beginning = config["settings"]["output_dir"]
+filetype = config["settings"]["filetype"]
 
 # Dictionary for translating instructions for VlsvReader
 translate = {"B":("vg_b_vol", 1e-9, "nT"),
@@ -9,14 +17,13 @@ translate = {"B":("vg_b_vol", 1e-9, "nT"),
 # Defining AnimationSpecs object and checking instructions
 class AnimationSpecs():
     def __init__(
-        self, animation_type, variable, component, 
-        animation_specific, bulkpath, filetype
+        self, animation_type, variable, component, animation_specific
         ):
         if animation_type not in ["2D", "triple", "fourier", "sf", "kurtosis", "rms"]:
             print("animation_type defined incorrectly")
             sys.exit(1)
 
-        if variable not in ["B", "v", "J", "rho", "bv"]:
+        if variable not in ["B", "v", "J", "rho"]:
             print("variable defined incorrectly")
             sys.exit(1)
 
@@ -31,7 +38,9 @@ class AnimationSpecs():
             else:
                 self.unitless = False
         
+
         self.fourier_direc = ""
+        
         if animation_type == "fourier":
             if animation_specific[0] == "x" or animation_specific[0] == "y":
                 self.fourier_type = "principle"
@@ -65,20 +74,14 @@ class AnimationSpecs():
 
         self.animation_type = animation_type
 
-        if variable == "bv":
-            self.variable = ["vg_b_vol", "proton/vg_v"]
-        else:
-            self.variable = translate[variable][0]
-            
-            self.unit = translate[variable][1]
-            self.unit_name = translate[variable][2]
-
+        self.variable = translate[variable][0]
         self.variable_name = variable
         self.component = component
 
-        self.bulkpath = bulkpath
+        self.unit = translate[variable][1]
+        self.unit_name = translate[variable][2]
 
-        self.name = ""
+        self.bulkpath = bulkpath
         self.memory_space = {}
         self.shape = {}
         self.dtype = ""
@@ -87,11 +90,29 @@ class AnimationSpecs():
         self.time_shape = 0
         self.time_dtype = ""
 
+        if variable == "rho":
+            name = f"{name_beginning}_{animation_type}_{self.variable_name}{filetype}"
 
+        elif animation_type == "2D":
+            name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}{filetype}"
 
+        elif animation_type == "triple":
+            name = f"{name_beginning}_{animation_type}_{self.variable_name}{filetype}"
 
-
-
+        elif animation_type == "fourier":
+            
+            if self.fourier_direc == "x" or self.fourier_direc == "y":
+                name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}_{self.fourier_direc}_{self.fourier_loc}{filetype}"
+            else:
+                name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}_{self.fourier_type}{filetype}"
+            
+        elif animation_type == "sf":
+            name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}_{self.delta_ls[0]}-{self.delta_ls[-1]}{filetype}"
+        
+        else:
+            name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}{filetype}"
+        
+        self.name = name
 
 
 
