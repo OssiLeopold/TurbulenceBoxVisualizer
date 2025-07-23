@@ -30,13 +30,30 @@ end_frame = int(config["settings"]["end_frame"])
 animations = list(ast.literal_eval(config["settings"]["animations"]))
 
 # Turn list into list of AnimationSpecs objects
-def cfg_to_AnimationSpecs(animations):
-    for i, object in enumerate(animations):
-        animations[i] = AnimationSpecs(
+def config_to_AnimationSpecs(animations):
+    animation_dict = {"B": [], "v": [], "J": [], "rho": []}
+    for animation in animations:
+        if animation[1] == "B":
+            animation_dict["B"].append(animation)
+        elif animation[1] == "v":
+            animation_dict["v"].append(animation)
+        elif animation[1] == "J":
+            animation_dict["J"].append(animation)
+        elif animation[1] == "rho":
+            animation_dict["rho"].append(animation)
+        else:
+            print("A variable is specified incorrectly")
+
+    animations_sorted = []
+    for key in animation_dict.keys():
+        animations_sorted.extend(animation_dict[key])
+
+    for i, object in enumerate(animations_sorted):
+        animations_sorted[i] = AnimationSpecs(
             animation_type = object[0], variable = object[1],
             component = object[2], animation_specific = object[3]
         )
-    return animations
+    return animations_sorted
 
 # Fetch all cellids of the bulkfiles
 def cellids_fetcher(object):
@@ -47,35 +64,35 @@ def cellids_fetcher(object):
     return cellids
 
 # Define which variables need to be fetched. Employ logic to avoid duplicates.
-def variables_to_be(animations):
+def needed_variables(object):
     variables_to_be = [] # or not?
-    for object in animations:
-        if object.animation_type == "triple":
-            for component in ["x","y","z"]:
-                if (object.variable, component) not in variables_to_be:
-                    variables_to_be.append((object.variable, component))
+    
+    if object.animation_type == "triple":
+        for component in ["x","y","z"]:
+            if (object.variable, component) not in variables_to_be:
+                variables_to_be.append((object.variable, component))
 
-        elif object.animation_type == "rms" and object.component == "pass":
-            for component in ["x","y","z"]:
-                if (object.variable, component) not in variables_to_be:
-                    variables_to_be.append((object.variable, component))
+    elif object.animation_type == "rms" and object.component == "pass":
+        for component in ["x","y","z"]:
+            if (object.variable, component) not in variables_to_be:
+                variables_to_be.append((object.variable, component))
 
-        elif object.component == "perp":
-            for component in ["x","y"]:
-                if (object.variable, component) not in variables_to_be:
-                    variables_to_be.append((object.variable, component))
+    elif object.component == "perp":
+        for component in ["x","y"]:
+            if (object.variable, component) not in variables_to_be:
+                variables_to_be.append((object.variable, component))
 
-        elif (object.variable, object.component) not in variables_to_be:
-            variables_to_be.append((object.variable, object.component))
-        
-        if object.animation_type == "2D" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be and object.component != "pass":
-            variables_to_be.append((object.variable, "magnitude"))
+    elif (object.variable, object.component) not in variables_to_be:
+        variables_to_be.append((object.variable, object.component))
+    
+    if object.animation_type == "2D" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be and object.component != "pass":
+        variables_to_be.append((object.variable, "magnitude"))
 
-        if object.animation_type == "triple" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be:
-            variables_to_be.append((object.variable, "magnitude"))
+    if object.animation_type == "triple" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be:
+        variables_to_be.append((object.variable, "magnitude"))
 
-        if ("time", "pass") not in variables_to_be:
-            variables_to_be.append(("time", "pass"))
+    if ("time", "pass") not in variables_to_be:
+        variables_to_be.append(("time", "pass"))
 
     return variables_to_be
 
@@ -112,46 +129,45 @@ def fetcher(variable_component):
         "component": variable_component[1]
     }
     unregister(shm._name, 'shared_memory')
-    return block
+    shared_blocks.append(block)
 
 # Include shared_memory adress and relevant data to animation objects
-def mem_space_includer(animations, shared_blocks):
-    for object in animations:
+def mem_space_includer(object, shared_blocks):
+    for block in shared_blocks:
+        if object.variable == block["variable"] and object.component == block["component"]:
+            object.memory_space = block["name"]
+            object.shape = block["shape"]
+            object.dtype = block["dtype"]
+        elif block["variable"] == "time":
+            object.time = block["name"]
+            object.time_shape = block["shape"]
+            object.time_dtype = block["dtype"]
+            
+    if object.animation_type in ["2D", "triple"] and object.unitless == True:
         for block in shared_blocks:
-            if object.variable == block["variable"] and object.component == block["component"]:
-                object.memory_space = block["name"]
-                object.shape = block["shape"]
+            if block["variable"] == object.variable and block["component"] == "magnitude":
+                object.memory_space_norm = block["name"]
+
+    if object.component == "perp":
+        for block in shared_blocks:
+            if block["variable"] == object.variable and block["component"] in ["x","y"]:
+                object.memory_space[block["component"]] = block["name"]
+                object.shape[block["component"]] = block["shape"]
                 object.dtype = block["dtype"]
-            elif block["variable"] == "time":
-                object.time = block["name"]
-                object.time_shape = block["shape"]
-                object.time_dtype = block["dtype"]
-                
-        if object.animation_type in ["2D", "triple"] and object.unitless == True:
-            for block in shared_blocks:
-                if block["variable"] == object.variable and block["component"] == "magnitude":
-                    object.memory_space_norm = block["name"]
 
-        if object.component == "perp":
-            for block in shared_blocks:
-                if block["variable"] == object.variable and block["component"] in ["x","y"]:
-                    object.memory_space[block["component"]] = block["name"]
-                    object.shape[block["component"]] = block["shape"]
-                    object.dtype = block["dtype"]
+    if object.animation_type == "triple":
+        for block in shared_blocks:
+            if object.variable == block["variable"] and block["component"] in ["x","y","z"]:
+                object.memory_space[block["component"]] = block["name"]
+                object.shape[block["component"]] = block["shape"]
+                object.dtype = block["dtype"]
 
-        if object.animation_type == "triple":
-            for block in shared_blocks:
-                if object.variable == block["variable"] and block["component"] in ["x","y","z"]:
-                    object.memory_space[block["component"]] = block["name"]
-                    object.shape[block["component"]] = block["shape"]
-                    object.dtype = block["dtype"]
-
-        if object.animation_type == "rms" and object.component == "pass":
-            for block in shared_blocks:
-                if object.variable == block["variable"] and block["component"] in ["x","y","z"]:
-                    object.memory_space[block["component"]] = block["name"]
-                    object.shape[block["component"]] = block["shape"]
-                    object.dtype = block["dtype"]
+    if object.animation_type == "rms" and object.component == "pass":
+        for block in shared_blocks:
+            if object.variable == block["variable"] and block["component"] in ["x","y","z"]:
+                object.memory_space[block["component"]] = block["name"]
+                object.shape[block["component"]] = block["shape"]
+                object.dtype = block["dtype"]
 
 
 # Function for launching correct animation for each animation object
@@ -171,34 +187,48 @@ def chooser(object):
         AnimationRMS(object)
 
 if __name__ == "__main__":
-    animations = cfg_to_AnimationSpecs(animations)
+    animations = config_to_AnimationSpecs(animations)
+
+    for animation in animations:
+        print(animation.variable)
 
     global cellids
     cellids = cellids_fetcher(animations[0])
 
-    variables = variables_to_be(animations)
-
-    # Fetch all needed data into separate shared memory blocks
+    global shared_blocks
     shared_blocks = []
-    with mp.Pool(len(variables)) as process:
-        shared_blocks = process.map(fetcher, variables)
 
-    mem_space_includer(animations, shared_blocks)
-    
-    # Debugging
-    """ for object in animations:
-        print(object.memory_space)
-        print(object.time) """
+    for i, animation in enumerate(animations):
+        variables = needed_variables(animation)
 
-    """ for object in animations:
-        print(object.memory_space_norm)"""
+        if len(shared_blocks) == 0:
+            for variable in variables:
+                fetcher(variable)
+        else:
+            for variable in variables:
+                fetch = True
+                for block in shared_blocks:
+                    if variable == (block["variable"], block["component"]):
+                        fetch = False
+                    
+                if fetch == True:
+                    fetcher(variable)
+
+        mem_space_includer(animation, shared_blocks)
+        chooser(animation)
+        if i+1 < len(animations) and animation.variable != animations[i+1].variable:
+                new_shared_blocks = []
+                for block in shared_blocks:
+                    if block["variable"] != "time":
+                        block['shm'].close()
+                        block['shm'].unlink()
+                    else:
+                        new_shared_blocks.append(block) 
+                shared_blocks = new_shared_blocks
+
 
     for block in shared_blocks:
         print(block)
-
-    # Launch a separate process for each AnimationSpecs object
-    with mp.Pool(len(animations)) as process:
-        process.map(chooser, animations)
 
     # Delete shared memory
     for block in shared_blocks:
