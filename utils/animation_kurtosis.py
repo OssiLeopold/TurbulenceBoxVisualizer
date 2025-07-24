@@ -27,7 +27,7 @@ class AnimationKurtosis():
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
         self.frames = len(self.data)
 
-        self.slices_pos = [50,951,50]
+        self.slices_pos = [64,961,64]
         self.slice_n = len(self.slices_pos)
 
         shm_time = shared_memory.SharedMemory(name=object.time)
@@ -39,9 +39,13 @@ class AnimationKurtosis():
         for i in range(self.frames):
                 self.data_mesh_x[i] = self.data[i].reshape(-1, self.x_length)
         
+        print(self.data_mesh_x[0])
+
         self.data_mesh_y = np.empty((self.frames, self.x_length, self.x_length))
         for i in range(self.frames):
                 self.data_mesh_y[i] = self.data[i].reshape(-1, self.x_length).T
+
+        print(self.data_mesh_y[0])
 
         self.ticks = []
         self.tick_labels = []

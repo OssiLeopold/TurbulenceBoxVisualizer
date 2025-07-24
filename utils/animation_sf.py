@@ -30,7 +30,7 @@ class AnimationSF():
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
         self.frames = len(self.data)
 
-        self.slices_pos = [i for i in range(500,501,50)]
+        self.slices_pos = [i for i in range(64,961,64)]
         print(self.slices_pos)
         self.slice_n = len(self.slices_pos)
 
@@ -77,12 +77,12 @@ class AnimationSF():
         for ax in self.axes:
             ax.clear()
 
-        delta_array_container = np.empty((len(self.object.delta_ls), self.slice_n * self.x_length))
+        delta_array_container = np.empty((len(self.object.delta_ls), 2 * self.slice_n * self.x_length))
         
         for i, dl in enumerate(self.object.delta_ls):
-            slices = np.empty((self.slice_n, self.x_length))
+            slices = np.empty((2 * self.slice_n, self.x_length))
             slices[:self.slice_n] = self.data_mesh_x[frame][self.slices_pos]
-            #slices[self.slice_n:] = self.data_mesh_y[frame][self.slices_pos]
+            slices[self.slice_n:] = self.data_mesh_y[frame][self.slices_pos]
 
             slices_shifted = np.roll(slices,dl)
 

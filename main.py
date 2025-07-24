@@ -9,11 +9,11 @@ import ast
 
 from utils.animation_specs import AnimationSpecs      # Class for animation object
 from utils.animation_2D import Animation2D
-from utils.animation_triple import AnimationTriple
-from utils.animation_fourier import AnimationFourier
-from utils.animation_sf import AnimationSF
-from utils.animation_kurtosis import AnimationKurtosis
-from utils.animation_rms import AnimationRMS
+#from utils.animation_triple import AnimationTriple
+#from utils.animation_fourier import AnimationFourier
+#from utils.animation_sf import AnimationSF
+#from utils.animation_kurtosis import AnimationKurtosis
+#from utils.animation_rms import AnimationRMS
 
 config = ConfigParser()
 config.read(".TurbulenceBoxVisualizer.ini")

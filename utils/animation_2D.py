@@ -1,9 +1,13 @@
 import os
-from configparser import ConfigParser
 import analysator as pt
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+import imageio.v3 as iio
+from configparser import ConfigParser
 from multiprocessing import shared_memory
+from multiprocessing import Pool
 from matplotlib import animation
 from matplotlib.animation import FFMpegWriter
 
@@ -101,8 +105,6 @@ class Animation2D():
         return self.p[0]
 
     def animation_unit(self):
-        fig, self.ax = plt.subplots()
-
         self.Min = round(min(self.data.flatten())/self.object.unit, 10)
         self.Max = round(max(self.data.flatten())/self.object.unit, 10)
 
@@ -115,28 +117,41 @@ class Animation2D():
         for i in range(self.frames):
             self.data_mesh[i] = self.data[i].reshape(-1, self.x_length)
 
-        self.p = [
-            self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[0]/self.object.unit, cmap = "bwr", vmin=self.Min, vmax=self.Max)]
-        cbar = fig.colorbar(self.p[0])
-        
-        if self.object.component != "pass":
-            self.ax.set_title(r'$\delta {}$'.format(self.object.variable_name + "_" + self.object.component), fontsize=16)
-        else:
-            self.ax.set_title(r'$\delta {}$'.format(self.object.variable_name), fontsize=16)
-        cbar.set_label(r'{}'.format(self.object.unit_name), rotation = 0, fontsize=12, va="top")
-        self.ax.set_xlabel(r'$x/d_p$',fontsize=12)
-        self.ax.set_ylabel(r'$y/d_p$', rotation=0, fontsize=12)
-        self.timelabel = self.ax.text(0.98, 1.02, "",transform=self.ax.transAxes)
+        start_frames = np.linspace(0, self.frames, num = 9, dtype="int")
+        frames_per_task = np.diff(start_frames)
 
-        anim = animation.FuncAnimation(fig, self.unit_update, frames = self.frames, interval = 20)
+        task_frames = []
+        for i in range(len(frames_per_task)):
+            task_frames.append((start_frames[i], frames_per_task[i]))
 
-        writer = FFMpegWriter(fps=5)
-        anim.save(self.object.name, writer = writer)
+        with Pool(len(frames_per_task)) as pool:
+            results = pool.map(self.unit_renderer, task_frames)
+
+        all_frames = [frame for sublist in results for frame in sublist]
+
+        self.combine_and_save(all_frames, self.object.name)
+
+    def unit_renderer(self, task):
+        fig, ax = plt.subplots()
+        raw_frames = []
+
+        for frame in range(task[0], task[0]+task[1], 1):
+            self.unit_update(frame, ax)
+            fig.canvas.draw()
+            w, h = fig.canvas.get_width_height()
+            frame_data = np.frombuffer(fig.canvas.buffer_rgba(), dtype=np.uint8)
+            frame_data = frame_data.reshape((h,w,4))
+            raw_frames.append(frame_data.copy())
+
         plt.close()
+        return raw_frames
 
-    def unit_update(self,frame):
-        self.p[0].remove()
-        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
-        self.p = [
-            self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[frame]/self.object.unit, cmap = "bwr", vmin=self.Min, vmax=self.Max)]
-        return self.p[0]
+    def unit_update(self, frame, ax):
+        ax.clear()
+        ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[frame]/self.object.unit, cmap = "bwr", vmin=self.Min, vmax=self.Max)
+
+    def combine_and_save(self, frames, output_file):
+        iio.imwrite(
+            uri=output_file, image=frames, fps=5,
+            codec="libx264"
+        )
