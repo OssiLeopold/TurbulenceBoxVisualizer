@@ -9,23 +9,23 @@ import ast
 
 from utils.animation_specs import AnimationSpecs      # Class for animation object
 from utils.animation_2D import Animation2D
-#from utils.animation_triple import AnimationTriple
-#from utils.animation_fourier import AnimationFourier
-#from utils.animation_sf import AnimationSF
-#from utils.animation_kurtosis import AnimationKurtosis
-#from utils.animation_rms import AnimationRMS
+from utils.animation_triple import AnimationTriple
+from utils.animation_fourier import AnimationFourier
+from utils.animation_sf import AnimationSF
+from utils.animation_kurtosis import AnimationKurtosis
+from utils.animation_rms import AnimationRMS
 
 config = ConfigParser()
 config.read(".TurbulenceBoxVisualizer.ini")
 
-# Set path to simulation bulkfiles
-bulkpath = config["paths"]["bulkpath"]
-vlsvobj = pt.vlsvfile.VlsvReader(bulkpath + "bulk.0000000.vlsv")
-x_length = vlsvobj.read_parameter("xcells_ini")
-
 # Get start frame and end frame from config
 start_frame = int(config["settings"]["start_frame"])
 end_frame = int(config["settings"]["end_frame"])
+
+# Set path to simulation bulkfiles
+bulkpath = config["paths"]["bulkpath"]
+vlsvobj = pt.vlsvfile.VlsvReader(bulkpath + f"bulk.{str(start_frame).zfill(7)}.vlsv")
+x_length = vlsvobj.read_parameter("xcells_ini")
 
 animations = list(ast.literal_eval(config["settings"]["animations"]))
 

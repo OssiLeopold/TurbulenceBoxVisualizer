@@ -117,12 +117,18 @@ class Animation2D():
         for i in range(self.frames):
             self.data_mesh[i] = self.data[i].reshape(-1, self.x_length)
 
-        start_frames = np.linspace(0, self.frames, num = 9, dtype="int")
-        frames_per_task = np.diff(start_frames)
+        if self.frames >= 8:
+            start_frames = np.linspace(0, self.frames, num = 9, dtype="int")
+            frames_per_task = np.diff(start_frames)
+        else:
+            start_frames = np.linspace(0, self.frames, num = self.frames + 1, dtype="int")
+            frames_per_task = np.diff(start_frames)
 
         task_frames = []
         for i in range(len(frames_per_task)):
             task_frames.append((start_frames[i], frames_per_task[i]))
+
+        print(task_frames)
 
         with Pool(len(frames_per_task)) as pool:
             results = pool.map(self.unit_renderer, task_frames)
@@ -133,6 +139,11 @@ class Animation2D():
 
     def unit_renderer(self, task):
         fig, ax = plt.subplots()
+        p = [ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[0]/self.object.unit, cmap = "bwr", vmin=self.Min, vmax=self.Max)]
+        cbar = fig.colorbar(p[0])
+        cbar.set_label(r'{}'.format(self.object.unit_name), rotation = 0, fontsize=12, va="top")
+        cbar.ax.xaxis.set_label_position("top")
+
         raw_frames = []
 
         for frame in range(task[0], task[0]+task[1], 1):
@@ -149,6 +160,11 @@ class Animation2D():
     def unit_update(self, frame, ax):
         ax.clear()
         ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[frame]/self.object.unit, cmap = "bwr", vmin=self.Min, vmax=self.Max)
+        title = f"${"\\delta " + self.object.variable_name + "_" + self.object.component}$"
+        ax.set_title(r'{}'.format(title), fontsize=16)
+        ax.set_xlabel(r'$x/d_p$',fontsize=12)
+        ax.set_ylabel(r'$y/d_p$', rotation=0, fontsize=12)
+        ax.text(0.98, 1.02, f"{self.time[frame]:.1f}s",transform=ax.transAxes)
 
     def combine_and_save(self, frames, output_file):
         iio.imwrite(

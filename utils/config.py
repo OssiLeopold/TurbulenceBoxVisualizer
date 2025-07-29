@@ -41,13 +41,13 @@ config["paths"] = {
 #   - kurtosis: again a list like [2,4,6...].
 
 config["settings"] = {
-    "start_frame" : 0,
-    "end_frame" : 7,
+    "start_frame" : 250,
+    "end_frame" : 300,
 
     "output_dir" : "Animations/sim32/sim32",
 
     "animations" : [
-                    ("2D", "J", "z", "unit")
+                    ("2D", "rho", "pass", "unit")
             ],
 
     "filetype" : ".mp4"

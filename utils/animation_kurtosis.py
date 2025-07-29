@@ -1,6 +1,8 @@
 import os
 from configparser import ConfigParser
 import analysator as pt
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib.animation import FFMpegWriter
@@ -38,14 +40,10 @@ class AnimationKurtosis():
         self.data_mesh_x = np.empty((self.frames, self.x_length, self.x_length))
         for i in range(self.frames):
                 self.data_mesh_x[i] = self.data[i].reshape(-1, self.x_length)
-        
-        print(self.data_mesh_x[0])
 
         self.data_mesh_y = np.empty((self.frames, self.x_length, self.x_length))
         for i in range(self.frames):
                 self.data_mesh_y[i] = self.data[i].reshape(-1, self.x_length).T
-
-        print(self.data_mesh_y[0])
 
         self.ticks = []
         self.tick_labels = []
@@ -75,9 +73,6 @@ class AnimationKurtosis():
             slices_shifted = np.roll(slices,dl)
 
             delta_array_container[i] = ne.evaluate('slices - slices_shifted').flatten()
-
-        """ for i in range(4):    
-            print(i,delta_array_container[i][-10:-1]) """
         
         kurtoi = []
         for i in range(len(self.object.delta_ls)):

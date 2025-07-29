@@ -2,6 +2,8 @@ import os
 from configparser import ConfigParser
 import analysator as pt
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import scipy as sp
 from multiprocessing import shared_memory
@@ -37,7 +39,7 @@ class AnimationFourier():
         shm_time = shared_memory.SharedMemory(name=object.time)
         self.time = np.ndarray(object.time_shape, dtype=object.time_dtype, buffer=shm_time.buf)
         
-        self.vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000000.vlsv")
+        self.vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000211.vlsv")
         self.cellids = self.vlsvobj.read_variable("CellID")
 
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))

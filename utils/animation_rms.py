@@ -2,6 +2,8 @@ import os
 from configparser import ConfigParser
 import analysator as pt
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import scipy as sp
 from multiprocessing import shared_memory

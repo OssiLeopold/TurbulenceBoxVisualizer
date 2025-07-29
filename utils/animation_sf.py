@@ -1,6 +1,8 @@
 import os
 from configparser import ConfigParser
 import analysator as pt
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 from matplotlib import animation
 from matplotlib.animation import FFMpegWriter
