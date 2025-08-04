@@ -66,10 +66,14 @@ def variables_to_be(animations):
                     variables_to_be.append((object.variable, component))
 
         elif object.variable == "residual":
-            if ("vg_b_vol", "magnitude") not in variables_to_be:
-                variables_to_be.append(("vg_b_vol", "magnitude"))
-            if ("proton/vg_v", "magnitude") not in variables_to_be:
-                variables_to_be.append(("proton/vg_v", "magnitude"))
+            for component in ["x","y","z"]:
+                if ("vg_b_vol", component) not in variables_to_be:
+                    variables_to_be.append(("vg_b_vol", component))
+                if ("proton/vg_v", component) not in variables_to_be:
+                    variables_to_be.append(("proton/vg_v", component))
+
+            if ("proton/vg_rho", "pass") not in variables_to_be:
+                variables_to_be.append(("proton/vg_rho", "pass"))
 
         elif (object.variable, object.component) not in variables_to_be:
             variables_to_be.append((object.variable, object.component))
@@ -87,7 +91,7 @@ def variables_to_be(animations):
 
 # Fetch data from vlsvfiles and place into shared memory
 def fetcher(variable_component):
-    if variable_component[0] == "rho" or variable_component[1] == "magnitude":
+    if variable_component[0] == "proton/vg_rho" or variable_component[1] == "magnitude":
         data = np.empty((end_frame - start_frame + 1, x_length*x_length))
         for frame in range(end_frame - start_frame + 1):
             vlsvobj = pt.vlsvfile.VlsvReader(bulkpath + f"bulk.{str(start_frame + frame).zfill(7)}.vlsv")
@@ -161,10 +165,19 @@ def mem_space_includer(animations, shared_blocks):
 
         if object.variable == "residual":
             for block in shared_blocks:
-                if "vg_b_vol" == block["variable"] or "proton/vg_v" == block["variable"]:
+                if "vg_b_vol" == block["variable"] and block["component"] in ["x", "y", "z"]:
+                    object.memory_space[block["variable"] + block["component"]] = block["name"]
+                    object.shape[block["variable"]] = block["shape"]
+                    object.dtype = block["dtype"]
+                if "proton/vg_v" == block["variable"] and block["component"] in ["x", "y", "z"]:
+                    object.memory_space[block["variable"] + block["component"]] = block["name"]
+                    object.shape[block["variable"]] = block["shape"]
+                    object.dtype = block["dtype"]
+                if "proton/vg_rho" == block["variable"]:
                     object.memory_space[block["variable"]] = block["name"]
                     object.shape[block["variable"]] = block["shape"]
                     object.dtype = block["dtype"]
+                    
 
 
 # Function for launching correct animation for each animation object

@@ -28,10 +28,52 @@ class AnimationRMS():
         else:
             self.animation_all()
 
-    """ def animation_residual(self):
-        shm_B = shared_memory.SharedMemory(name=self.object.memory_space["vg_b_vol"])
-        data_B = np.ndarray(self.object.shape["vg_b_vol"], dtype  = self.object.dtype, buffer = shm_B.buf)
-        b =  """
+    def animation_residual(self):
+        mu_0 = 4 * np.pi * 10**(-7)
+        m_p = 1.67262192595 * 10**(-27)
+
+        shm_time = shared_memory.SharedMemory(name=self.object.time)
+        self.time = np.ndarray(self.object.time_shape, dtype=self.object.time_dtype, buffer=shm_time.buf)
+        self.frames = len(self.time)
+
+        shm_rho = shared_memory.SharedMemory(name=self.object.memory_space["proton/vg_rho"])
+        shm_Bx = shared_memory.SharedMemory(name=self.object.memory_space["vg_b_vol" + "x"])
+        shm_By = shared_memory.SharedMemory(name=self.object.memory_space["vg_b_vol" + "y"])
+        shm_Bz = shared_memory.SharedMemory(name=self.object.memory_space["vg_b_vol" + "z"])
+        rho = np.ndarray(self.object.shape["vg_b_vol"], dtype = self.object.dtype, buffer = shm_rho.buf) * m_p
+        bx = np.ndarray(self.object.shape["vg_b_vol"], dtype = self.object.dtype, buffer = shm_Bx.buf) / np.sqrt(mu_0 * rho)
+        by = np.ndarray(self.object.shape["vg_b_vol"], dtype = self.object.dtype, buffer = shm_By.buf) / np.sqrt(mu_0 * rho)
+        bz = np.ndarray(self.object.shape["vg_b_vol"], dtype = self.object.dtype, buffer = shm_Bz.buf) / np.sqrt(mu_0 * rho)
+
+        shm_vx = shared_memory.SharedMemory(name=self.object.memory_space["proton/vg_v" + "x"])
+        shm_vy = shared_memory.SharedMemory(name=self.object.memory_space["proton/vg_v" + "y"])
+        shm_vz = shared_memory.SharedMemory(name=self.object.memory_space["proton/vg_v" + "z"])
+        vx = np.ndarray(self.object.shape["proton/vg_v"], dtype = self.object.dtype, buffer = shm_vx.buf)
+        vy = np.ndarray(self.object.shape["proton/vg_v"], dtype = self.object.dtype, buffer = shm_vy.buf)
+        vz = np.ndarray(self.object.shape["proton/vg_v"], dtype = self.object.dtype, buffer = shm_vz.buf)
+
+        self.sigma_c = np.mean((2 * (vx*bx + vy*by + vz*bz) / (vx**2+vy**2+vz**2 + bx**2+by**2+bz**2)), axis = 1)
+        self.sigma_r = np.mean(((vx**2+vy**2+vz**2 - bx**2-by**2-bz**2) / (vx**2+vy**2+vz**2 + bx**2+by**2+bz**2)), axis = 1)
+
+        fig, self.ax = plt.subplots()
+
+        label_c = f"$\\sigma_c$"
+        label_r = f"$\\sigma_r$"
+        self.p = [self.ax.plot([],[], label = r'{}'.format(label_c)), self.ax.plot([],[], label = r'{}'.format(label_r))]
+
+        self.ax.set_xlim(0, self.time[-1])
+        self.ax.set_ylim(-1,1)
+        self.ax.legend()
+
+        anim = animation.FuncAnimation(fig, self.update_residual, frames = self.frames + 1, interval = 20)
+        
+        writer = FFMpegWriter(fps=5)
+        anim.save(self.object.name, writer=writer)
+        plt.close()
+
+    def update_residual(self, frame):
+        self.p[0][0].set_data(self.time[:frame], self.sigma_c[:frame])
+        self.p[1][0].set_data(self.time[:frame], self.sigma_r[:frame])
 
     def animation_one(self):
         shm = shared_memory.SharedMemory(name=self.object.memory_space)
