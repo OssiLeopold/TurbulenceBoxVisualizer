@@ -21,10 +21,17 @@ os.environ['PTNOLATEX']='1'
 class AnimationRMS():
     def __init__(self, object):
         self.object = object
-        if object.component in ["x","y","z","magnitude"]:
+        if object.variable == "residual":
+            self.animation_residual()
+        elif object.component in ["x","y","z","magnitude"]:
             self.animation_one()
         else:
             self.animation_all()
+
+    """ def animation_residual(self):
+        shm_B = shared_memory.SharedMemory(name=self.object.memory_space["vg_b_vol"])
+        data_B = np.ndarray(self.object.shape["vg_b_vol"], dtype  = self.object.dtype, buffer = shm_B.buf)
+        b =  """
 
     def animation_one(self):
         shm = shared_memory.SharedMemory(name=self.object.memory_space)

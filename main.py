@@ -65,6 +65,12 @@ def variables_to_be(animations):
                 if (object.variable, component) not in variables_to_be:
                     variables_to_be.append((object.variable, component))
 
+        elif object.variable == "residual":
+            if ("vg_b_vol", "magnitude") not in variables_to_be:
+                variables_to_be.append(("vg_b_vol", "magnitude"))
+            if ("proton/vg_v", "magnitude") not in variables_to_be:
+                variables_to_be.append(("proton/vg_v", "magnitude"))
+
         elif (object.variable, object.component) not in variables_to_be:
             variables_to_be.append((object.variable, object.component))
         
@@ -153,6 +159,13 @@ def mem_space_includer(animations, shared_blocks):
                     object.shape[block["component"]] = block["shape"]
                     object.dtype = block["dtype"]
 
+        if object.variable == "residual":
+            for block in shared_blocks:
+                if "vg_b_vol" == block["variable"] or "proton/vg_v" == block["variable"]:
+                    object.memory_space[block["variable"]] = block["name"]
+                    object.shape[block["variable"]] = block["shape"]
+                    object.dtype = block["dtype"]
+
 
 # Function for launching correct animation for each animation object
 def chooser(object):
@@ -186,9 +199,9 @@ if __name__ == "__main__":
     mem_space_includer(animations, shared_blocks)
     
     # Debugging
-    """ for object in animations:
+    for object in animations:
         print(object.memory_space)
-        print(object.time) """
+        print(object.time)
 
     """ for object in animations:
         print(object.memory_space_norm)"""

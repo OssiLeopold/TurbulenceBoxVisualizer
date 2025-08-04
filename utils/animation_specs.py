@@ -23,7 +23,7 @@ class AnimationSpecs():
             print("animation_type defined incorrectly")
             sys.exit(1)
 
-        if variable not in ["B", "v", "J", "rho"]:
+        if variable not in ["B", "v", "J", "rho", "residual"]:
             print("variable defined incorrectly")
             sys.exit(1)
 
@@ -74,12 +74,17 @@ class AnimationSpecs():
 
         self.animation_type = animation_type
 
-        self.variable = translate[variable][0]
-        self.variable_name = variable
-        self.component = component
+        if variable != "residual":
+            self.variable = translate[variable][0]
+            self.variable_name = variable
+            self.component = component
 
-        self.unit = translate[variable][1]
-        self.unit_name = translate[variable][2]
+            self.unit = translate[variable][1]
+            self.unit_name = translate[variable][2]
+        else:
+            self.variable = variable
+            self.variable_name = variable
+            self.component = component
 
         self.bulkpath = bulkpath
         self.memory_space = {}
