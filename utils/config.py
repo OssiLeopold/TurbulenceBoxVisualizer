@@ -47,7 +47,7 @@ config["settings"] = {
     "output_dir" : "Animations/sim32/sim32",
 
     "animations" : [
-	                ("fourier", "B", "perp", ["1D"])
+	                ("rms", "residual", "all", "unit")
             ],
 
     "filetype" : ".mp4"

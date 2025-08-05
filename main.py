@@ -74,6 +74,12 @@ def variables_to_be(animations):
 
             if ("proton/vg_rho", "pass") not in variables_to_be:
                 variables_to_be.append(("proton/vg_rho", "pass"))
+            
+            if ("vg_j", "z") not in variables_to_be:
+                variables_to_be.append(("vg_j", "z"))
+
+            if ("vg_ttensor", "pass") not in variables_to_be:
+                variables_to_be.append(("vg_ttensor", "pass"))
 
         elif (object.variable, object.component) not in variables_to_be:
             variables_to_be.append((object.variable, object.component))
@@ -96,6 +102,12 @@ def fetcher(variable_component):
         for frame in range(end_frame - start_frame + 1):
             vlsvobj = pt.vlsvfile.VlsvReader(bulkpath + f"bulk.{str(start_frame + frame).zfill(7)}.vlsv")
             data[frame] = np.array(vlsvobj.read_variable(variable_component[0], operator = variable_component[1]))[cellids[frame].argsort()]
+
+    elif variable_component[0] == "vg_ttensor":
+        data = np.empty((end_frame - start_frame + 1, x_length*x_length,3))
+        for frame in range(end_frame - start_frame + 1):
+            vlsvobj = pt.vlsvfile.VlsvReader(bulkpath + f"bulk.{str(start_frame + frame).zfill(7)}.vlsv")
+            data[frame] = np.diagonal(vlsvobj.read_variable(variable_component[0], operator = variable_component[1])[cellids[frame].argsort()], axis1=1, axis2=2)
 
     elif variable_component[0] == "time":
         data = np.empty(end_frame - start_frame + 1)
@@ -174,6 +186,14 @@ def mem_space_includer(animations, shared_blocks):
                     object.shape[block["variable"]] = block["shape"]
                     object.dtype = block["dtype"]
                 if "proton/vg_rho" == block["variable"]:
+                    object.memory_space[block["variable"]] = block["name"]
+                    object.shape[block["variable"]] = block["shape"]
+                    object.dtype = block["dtype"]
+                if "vg_ttensor" == block["variable"]:
+                    object.memory_space[block["variable"]] = block["name"]
+                    object.shape[block["variable"]] = block["shape"]
+                    object.dtype = block["dtype"]
+                if "vg_j" == block["variable"]:
                     object.memory_space[block["variable"]] = block["name"]
                     object.shape[block["variable"]] = block["shape"]
                     object.dtype = block["dtype"]
