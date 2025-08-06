@@ -69,8 +69,8 @@ class AnimationRMS():
         v_perp = np.sqrt(vx**2 + vy**2)
         self.v_parr_rms = np.sqrt(np.mean((vz**2), axis=1) - np.mean((vz), axis=1)**2)
         self.v_perp_rms = np.sqrt(np.mean((v_perp**2), axis=1) - np.mean((v_perp), axis=1)**2)
-
-        self.T_perp = np.mean(1/2 * (T[:,0,:] + T[:,1,:])/ (500 * 1e3),axis=1) 
+        
+        self.T_perp = np.mean(1/2 * (T[:,0,:] + T[:,1,:]) / (500 * 1e3),axis=1) 
         self.T_parr = np.mean(T[:,2,:] / (500 * 1e3),axis=1) 
         self.A = np.mean(1/2 * (T[:,0,:] + T[:,1,:])/T[:,2,:],axis=1)
 
@@ -81,10 +81,10 @@ class AnimationRMS():
         self.axes = self.axes.flatten()
 
         J_z_rms_label = f"$J_\\parallel^{{rms}}$"
-        b_perp_label = f"$b_\\perp$"
-        b_parr_label = f"$b_\\parallel$"
-        v_perp_label = f"$v_\\perp$"
-        v_parr_label = f"$v_\\parallel$"
+        b_perp_label = f"$b_\\perp^{{rms}}$"
+        b_parr_label = f"$b_\\parallel{{rms}}$"
+        v_perp_label = f"$v_\\perp^{{rms}}$"
+        v_parr_label = f"$v_\\parallel^{{rms}}$"
         T_perp_label = f"$\\langle\\frac{{T_\\perp}}{{T_0}}\\rangle$"
         T_parr_label = f"$\\langle\\frac{{T_\\parallel}}{{T_0}}\\rangle$"
         A_label = f"$\\langle A_p\\rangle$"

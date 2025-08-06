@@ -27,7 +27,7 @@ class AnimationKurtosis():
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
         self.frames = len(self.data)
 
-        self.slices_pos = [50,951,50]
+        self.slices_pos = [i for i in range(1000)]
         self.slice_n = len(self.slices_pos)
 
         shm_time = shared_memory.SharedMemory(name=object.time)
