@@ -12,7 +12,8 @@ filetype = config["settings"]["filetype"]
 translate = {"B":("vg_b_vol", 1e-9, "nT"),
                 "v":("proton/vg_v", 1e3, "km/s"),
                 "J":("vg_j", 1e-9, r"$\frac{nA}{m^2}$"),
-                "rho":("proton/vg_rho", 1e6, r"$\frac{n}{m^3}$")}
+                "rho":("proton/vg_rho", 1e6, r"$\frac{n}{m^3}$"),
+                "E": ("vg_e_vol", 1e-3, r"$\frac{mV}{m}$")}
 
 # Defining AnimationSpecs object and checking instructions
 class AnimationSpecs():
@@ -23,7 +24,7 @@ class AnimationSpecs():
             print("animation_type defined incorrectly")
             sys.exit(1)
 
-        if variable not in ["B", "v", "J", "rho", "residual"]:
+        if variable not in ["B", "E", "v", "J", "rho", "residual", "E_vs_B", "J_vs_B"]:
             print("variable defined incorrectly")
             sys.exit(1)
 
@@ -74,7 +75,7 @@ class AnimationSpecs():
 
         self.animation_type = animation_type
 
-        if variable != "residual":
+        if variable not in ["residual", "J_vs_B", "E_vs_B"]:
             self.variable = translate[variable][0]
             self.variable_name = variable
             self.component = component

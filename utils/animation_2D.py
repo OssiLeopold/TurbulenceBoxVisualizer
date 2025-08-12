@@ -20,15 +20,13 @@ os.environ['PTNOLATEX']='1'
 class Animation2D():
     def __init__(self, object):
         self.object = object
-        shm = shared_memory.SharedMemory(name=object.memory_space)
-        self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
 
         shm_time = shared_memory.SharedMemory(name=object.time)
         self.time = np.ndarray(object.time_shape, dtype=object.time_dtype, buffer=shm_time.buf)
 
         prot_plas_freq = np.sqrt(1e6 * (1.602176634 * 10**(-19))**2 / (8.8541878128 * 10**(-12) * 1.67262192595 * 10**(-27)))
         dp = 299792458 / prot_plas_freq
-        print(dp)
+        #print(dp)
 
         self.vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000000.vlsv")
         self.cellids = self.vlsvobj.read_variable("CellID")
@@ -38,19 +36,26 @@ class Animation2D():
         x = coords[0]
         y = coords[1]
 
-        print(x)
-        print(y)
         self.x_mesh = x.reshape(-1,self.x_length) / dp
         self.y_mesh = y.reshape(-1,self.x_length) / dp
 
-        self.frames = len(self.data)
+        self.frames = len(self.time)
 
         if object.unitless == True:
-            self.animation_unitless()
+            if self.object.variable in ["J_vs_B", "E_vs_B"]:
+                self.animation_streamplot_unitless()
+            else:
+                self.animation_unitless()
         else:
-            self.animation_unit()
+            if self.object.variable in ["J_vs_B", "E_vs_B"]:
+                self.animation_streamplot_unit()
+            else:
+                self.animation_unit()
 
     def animation_unitless(self):
+        shm = shared_memory.SharedMemory(name=object.memory_space)
+        self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
+
         shm_norm = shared_memory.SharedMemory(name=self.object.memory_space_norm)
         mag = np.ndarray(self.object.shape, dtype=self.object.dtype, buffer=shm_norm.buf)
         mag_average = np.empty(self.frames)
@@ -101,6 +106,9 @@ class Animation2D():
         return self.p[0]
 
     def animation_unit(self):
+        shm = shared_memory.SharedMemory(name=object.memory_space)
+        self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
+
         fig, self.ax = plt.subplots()
 
         self.Min = round(min(self.data.flatten())/self.object.unit, 10)
@@ -140,3 +148,38 @@ class Animation2D():
         self.p = [
             self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh[frame]/self.object.unit, cmap = "bwr", vmin=self.Min, vmax=self.Max)]
         return self.p[0]
+
+    def animation_streamplot_unit(self):
+        self.fig, self.ax = plt.subplots()
+        shm_background = shared_memory.SharedMemory(name=self.object.memory_space["background"])
+        shm_Bx = shared_memory.SharedMemory(name=self.object.memory_space["vg_b_volx"])
+        shm_By = shared_memory.SharedMemory(name=self.object.memory_space["vg_b_voly"])
+        
+        background = np.ndarray(self.object.shape["background"], dtype=self.object.dtype, buffer=shm_background.buf)
+        B_x = np.ndarray(self.object.shape["vg_b_volx"], dtype=self.object.dtype, buffer=shm_Bx.buf)
+        B_y = np.ndarray(self.object.shape["vg_b_voly"], dtype=self.object.dtype, buffer=shm_By.buf)
+
+        self.background_mesh = background.reshape((self.frames, self.x_length, self.x_length))
+        self.B_x_mesh = B_x.reshape((self.frames, self.x_length, self.x_length))
+        self.B_y_mesh = B_y.reshape((self.frames, self.x_length, self.x_length))
+        
+        self.Min = round(min(background.flatten()), 15)
+        self.Max = round(max(background.flatten()), 15)
+
+        if abs(self.Min) > abs(self.Max):
+            self.Max = -self.Min
+        else:
+            self.Min = -self.Max
+
+        self.first = True
+        anim = animation.FuncAnimation(self.fig, self.streamplot_update_unit, frames = self.frames, interval = 20)
+        writer = FFMpegWriter(fps = 5)
+        anim.save(self.object.name, writer = writer)
+
+    def streamplot_update_unit(self, frame):
+        self.ax.clear()
+        pcm = self.ax.pcolormesh(self.x_mesh, self.y_mesh, self.background_mesh[frame], vmin = self.Min, vmax = self.Max,cmap = "bwr")
+        if self.first == True:
+            self.fig.colorbar(pcm, ax=self.ax)
+        self.ax.streamplot(self.x_mesh, self.y_mesh, self.B_x_mesh[frame], self.B_y_mesh[frame], broken_streamlines = False, density = 1, linewidth = 0.6, arrowstyle = "-")
+        self.first = False
