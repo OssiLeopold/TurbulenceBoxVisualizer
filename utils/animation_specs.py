@@ -24,7 +24,7 @@ class AnimationSpecs():
             print("animation_type defined incorrectly")
             sys.exit(1)
 
-        if variable not in ["B", "E", "v", "J", "rho", "residual", "E_vs_B", "J_vs_B"]:
+        if variable not in ["B", "E", "v", "J", "rho", "residual", "E_vs_B", "J_vs_B", "E_vs_A", "J_vs_A"]:
             print("variable defined incorrectly")
             sys.exit(1)
 
@@ -75,7 +75,7 @@ class AnimationSpecs():
 
         self.animation_type = animation_type
 
-        if variable not in ["residual", "J_vs_B", "E_vs_B"]:
+        if variable not in ["residual", "J_vs_B", "E_vs_B", "E_vs_A", "J_vs_A"]:
             self.variable = translate[variable][0]
             self.variable_name = variable
             self.component = component

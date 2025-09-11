@@ -81,14 +81,14 @@ def variables_to_be(animations):
             if ("vg_ttensor", "pass") not in variables_to_be:
                 variables_to_be.append(("vg_ttensor", "pass"))
 
-        elif object.variable == "J_vs_B":
+        elif object.variable in ["J_vs_B", "J_vs_A"]:
             for component in ["x","y"]:
                 if ("vg_b_vol", component) not in variables_to_be:
                     variables_to_be.append(("vg_b_vol", component))
             if ("vg_j", "z") not in variables_to_be:
                 variables_to_be.append(("vg_j", "z"))
 
-        elif object.variable == "E_vs_B":
+        elif object.variable in ["E_vs_B", "E_vs_A"]:
             for component in ["x","y"]:
                 if ("vg_b_vol", component) not in variables_to_be:
                     variables_to_be.append(("vg_b_vol", component))
@@ -212,7 +212,7 @@ def mem_space_includer(animations, shared_blocks):
                     object.shape[block["variable"]] = block["shape"]
                     object.dtype = block["dtype"]
 
-        if object.variable == "J_vs_B":
+        if object.variable in ["J_vs_B", "J_vs_A"]:
             for block in shared_blocks:
                 if "vg_b_vol" == block["variable"] and block["component"] in ["x", "y"]:
                         object.memory_space[block["variable"] + block["component"]] = block["name"]
@@ -223,7 +223,7 @@ def mem_space_includer(animations, shared_blocks):
                         object.shape["background"] = block["shape"]
                         object.dtype = block["dtype"]
 
-        if object.variable == "E_vs_B":
+        if object.variable in ["E_vs_B", "E_vs_A"]:
             for block in shared_blocks:
                 if "vg_b_vol" == block["variable"] and block["component"] in ["x", "y"]:
                         object.memory_space[block["variable"] + block["component"]] = block["name"]

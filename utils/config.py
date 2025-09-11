@@ -42,12 +42,12 @@ config["paths"] = {
 
 config["settings"] = {
     "start_frame" : 0,
-    "end_frame" : 20,
+    "end_frame" : 100,
 
     "output_dir" : "Animations/sim32/sim32",
 
     "animations" : [
-	                ("2D", "J_vs_B", "z", "unit"),("2D", "E_vs_B", "z", "unit")
+	                ("2D", "J_vs_A", "z", "unit"),("2D", "E_vs_A", "z", "unit")
             ],
 
     "filetype" : ".mp4"
