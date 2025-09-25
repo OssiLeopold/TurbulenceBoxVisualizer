@@ -10,7 +10,7 @@ from matplotlib.animation import FFMpegWriter
 config = ConfigParser()
 config.read(".TurbulenceBoxVisualizer.ini")
 
-# Telling FFMpegWriter the location of FFMpeg
+#Telling FFMpegWriter the location of FFMpeg
 plt.rcParams['animation.ffmpeg_path'] = config["paths"]["ffmpeg_path"]
 
 #enabling use of latex

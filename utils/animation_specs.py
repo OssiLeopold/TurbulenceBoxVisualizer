@@ -66,6 +66,10 @@ class AnimationSpecs():
             elif animation_specific[0] == "2D":
                 self.fourier_type = "2D"
 
+            elif animation_specific[0] == "window":
+                self.fourier_type = "window"
+                self.frame = animation_specific[1]
+
             else:
                 print("fourier spec defined incorrectly")
                 sys.exit(1)

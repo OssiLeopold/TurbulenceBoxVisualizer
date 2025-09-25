@@ -8,6 +8,7 @@ from multiprocessing import shared_memory
 from matplotlib.colors import LogNorm
 from matplotlib import animation
 from matplotlib.animation import FFMpegWriter
+from matplotlib.widgets import SpanSelector
 
 config = ConfigParser()
 config.read(".TurbulenceBoxVisualizer.ini")
@@ -55,6 +56,8 @@ class AnimationFourier():
             self.animation_1D_PSD()
         elif object.fourier_type == "2D":
             self.animation_2D_PSD()
+        elif object.fourier_type == "window":
+            self.window()
 
     def animation_1D_PSD(self):
         fig, self.ax = plt.subplots()
@@ -182,6 +185,112 @@ class AnimationFourier():
         self.p[0].remove()
         self.p[0] = self.ax.pcolormesh(self.KX, self.KY, self.PSD_2D_perp[frame], norm=LogNorm(vmin=1e-9, vmax=self.Max))
         return self.p
+
+    def window(self):
+        self.fig, self.ax = plt.subplots()
+
+        # Reshape raw data into mesh
+        data_x_mesh = self.data_x[0].reshape((self.x_length, self.x_length))
+        data_y_mesh = self.data_y[0].reshape((self.x_length, self.x_length))
+
+        # Fourier transfrom meshshes
+        data_x_mesh_ft = np.abs(sp.fft.fft2(data_x_mesh, workers = 8))
+        data_y_mesh_ft = np.abs(sp.fft.fft2(data_y_mesh, workers = 8))
+
+        # |F_perp|**2 = |F_x|**2 + |F_y|**2
+        PSD_2D_perp = data_x_mesh_ft**2 + data_y_mesh_ft**2
+
+        del data_x_mesh_ft, data_y_mesh_ft
+        
+        nbins = 500
+        dx = np.diff(self.x[0:self.x_length])[0]
+
+        k_xy = 2 * np.pi * sp.fft.fftfreq(self.x_length, dx)
+        KX, KY = np.meshgrid(k_xy, k_xy)
+        K_perp = np.sqrt(KX**2 + KY**2)
+
+        del k_xy, KX, KY
+
+        k_bin_edges = np.linspace(0, np.max(K_perp), num = nbins + 1) 
+        bin_idx = np.digitize(K_perp.ravel(), k_bin_edges) - 1
+        bin_idx = np.clip(bin_idx, 0, nbins - 1)
+
+        self.PSD_1D_perp = np.bincount(bin_idx, weights = PSD_2D_perp.ravel(), minlength=nbins)
+
+        del PSD_2D_perp
+
+        self.PSD_1D_perp *= (dx * dx) / (nbins * nbins)
+
+        Min = min(self.PSD_1D_perp.flatten())
+        Max = max(self.PSD_1D_perp.flatten())
+
+        prot_plas_freq = np.sqrt(1e6 * (1.602176634 * 10**(-19))**2 / (8.8541878128 * 10**(-12) * 1.67262192595 * 10**(-27)))
+        self.dp = 299792458 / prot_plas_freq
+        self.k_vals = 0.5 * (k_bin_edges[1:] + k_bin_edges[:-1]) * self.dp
+ 
+        self.p = self.ax.plot(self.k_vals,self.PSD_1D_perp)[0]
+
+        self.ax.set_xscale("log")
+        self.ax.set_yscale("log")
+
+        self.ax.set_ylim(1e-10, Max*2)
+        self.ax.set_xlim(self.k_vals[0]*0.9,self.k_vals[-1])
+
+        xlabel = f"$k_{{\\perp}}d_p$"
+        self.ax.set_xlabel(r"{}".format(xlabel))
+        ylabel = f"$P(k_{{\\perp}})$"
+        self.ax.set_ylabel(r"{}".format(ylabel))
+
+        #self.timelabel = self.ax.text(0.98, 1.02, "", transform=self.ax.transAxes)
+
+        self.secant_line, = self.ax.plot([], [], lw=2, linestyle="--")     # the secant segment
+        self.p1_marker,   = self.ax.plot([], [], marker="o", ms=7, ls="")  # start point
+        self.p2_marker,   = self.ax.plot([], [], marker="o", ms=7, ls="")  # end point
+        self.slope_text = self.ax.text(0.02, 0.98, "", transform=self.ax.transAxes,
+                            va="top", ha="left",
+                            bbox=dict(boxstyle="round", fc="w", alpha=0.8))
+
+        span = SpanSelector(
+        self.ax, self.onselect, "horizontal",
+        useblit=True, interactive=True, props=dict(alpha=0.2),
+        grab_range=5  # pixels; makes handles easier to grab
+)       
+
+        plt.ioff()
+        plt.show()
+
+
+    def y_at(self, xq):
+        return np.interp(xq, self.k_vals, self.PSD_1D_perp)
+
+    def onselect(self, xmin, xmax):
+        # Normalize order
+        if xmin == xmax:
+            return
+        if xmin > xmax:
+            xmin, xmax = xmax, xmin
+
+        y1 = self.y_at(xmin)
+        y2 = self.y_at(xmax)
+        slope = (y2 - y1) / (xmax - xmin)
+
+        # Update secant line (just the segment between the chosen points)
+        self.secant_line.set_data([xmin, xmax], [y1, y2])
+
+        # Update point markers
+        self.p1_marker.set_data([xmin], [y1])
+        self.p2_marker.set_data([xmax], [y2])
+
+        # Update slope label
+        self.slope_text.set_text(
+            f"x_1={xmin:.3f}, y_2={y1:.3f}\n"
+            f"x_1={xmax:.3f}, y_2={y2:.3f}\n"
+            f"slope = (y_2-y_1)/(x_2-x_1) = {slope:.6g}"
+        )
+
+        self.fig.canvas.draw_idle()
+
+    
 
     def animation_principle(self):
         fig, self.ax = plt.subplots()

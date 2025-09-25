@@ -17,7 +17,7 @@ config["paths"] = {
 #   - sf: structure function of given variable.
 #   - kurtosis: kurtosis of given variable.
 
-# <variable>: "B", "v", "J", "rho"
+# <variable>: "B", "v", "J", "rho", 
 
 # <component>: "x", "y", "z", or "total" for vector variable and "pass" for scalar variable.
 
@@ -36,18 +36,22 @@ config["paths"] = {
 #
 #       - ["trace_diag"] -> for trace PSD for diag directions.
 #
+#       - ["1D"] for 1 dimensional PSD or ["2D"] for two dimensional PSD of B_perp
+#
+#       - ["window", <frame>] for a snapshot of the 1D psd to check slope
+#
 #   - sf: a list like [2,4,6...] which states the dl in cells for structure function.
 #
 #   - kurtosis: again a list like [2,4,6...].
 
 config["settings"] = {
     "start_frame" : 0,
-    "end_frame" : 100,
+    "end_frame" : 1,
 
     "output_dir" : "Animations/sim32/sim32",
 
     "animations" : [
-	                ("2D", "J_vs_A", "z", "unit"),("2D", "E_vs_A", "z", "unit")
+	                ("rms", "residual", "all", "unit")
             ],
 
     "filetype" : ".mp4"
