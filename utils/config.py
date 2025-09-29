@@ -5,7 +5,7 @@ config = ConfigParser()
 config["paths"] = {
     "ffmpeg_path" : "/home/elmer/turso/appl/ffmpeg/bin/ffmpeg",
     "latex_path" : "/home/elmer/turso/appl/tex-basic/texlive/2023/bin/x86_64-linux:",
-    "bulkpath" : "/home/elmer/turso/bulks_mount/sim32/"
+    "bulkpath" : "/home/elmer/turso/bulks_mount/sim33/"
 }
 
 # Define what animations are to be produced:
@@ -48,7 +48,7 @@ config["settings"] = {
     "start_frame" : 45,
     "end_frame" : 55,
 
-    "output_dir" : "Animations/sim32/sim32",
+    "output_dir" : "Animations/sim33/sim33",
 
     "animations" : [
 	                ("2D", "J_vs_A", "z", "unit")
