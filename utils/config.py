@@ -5,58 +5,53 @@ config = ConfigParser()
 config["paths"] = {
     "ffmpeg_path" : "/home/elmer/turso/appl/ffmpeg/bin/ffmpeg",
     "latex_path" : "/home/elmer/turso/appl/tex-basic/texlive/2023/bin/x86_64-linux:",
-    "bulkpath" : "/home/elmer/mahti/bulks_mount/mahti_sim001/"
+    "bulkpath" : "/home/elmer/turso/bulks/sim32/"
 }
 
 # Define what animations are to be produced:
 # Each animation has to be in the from of a list, e.g: ["<animation_type>", "<variable>", "<component>", "<animation_spesific>"]
-
-# <animation_type>: 2D, fourier, sf, kurtosis or triple:
+#
+# <animation_type>:
 #   - 2D: 2 dimensional heat map of specified variable.
+#   - triple: 2 dimensional heat map of all components of a vector variable.
 #   - fourier: fourier transform of given variable.
 #   - sf: structure function of given variable.
 #   - kurtosis: kurtosis of given variable.
-
-# <variable>: "B", "v", "J", "rho", 
-
-# <component>: "x", "y", "z", or "total" for vector variable and "pass" for scalar variable.
-
+#   - diagnostics: figure of allotment of different variables.
+#   - reconnection: 2D heat map of B_perp or J_z with A_z isolines on top and x and o points.
+#
+# <variable>: "B", "v", "J", "rho".
+#
+# <component>: "x", "y", "z", or "magnitude" for vector variable and "pass" for scalar variable.
+#
 # <animation_spesific>:
-#   - 2D and tirple: "unit" or "unitless"
-
+#   - 2D: "unit" or "unitless"
+#
+#   - triple: "unit" or "unitless"
+#
 #   - fourier:
-#       - ["x", <0-1>] -> x (or y) states the direction along which you want the slice to be done.
-#         <0-1> states the y (or x) coordinate where you want the slice to be done (0-1 -> y_min - y_max).
-# 
-#       - ["diag", <1 or 2>] -> if you want fourier in diagonal direction. Enter 1 if you want SW->NE.
-#                   Enter 2 if you want NW->SW.
-#
-#       - ["trace", <0-1>, <0-1>] -> If you want trace PSD.
-#          First number for x slice y-coord and second number for y slice x-coord.
-#
-#       - ["trace_diag"] -> for trace PSD for diag directions.
-#
-#       - ["1D"] for 1 dimensional PSD or ["2D"] for two dimensional PSD of B_perp
-#
-#       - ["window", <frame>] for a snapshot of the 1D psd to check slope
+#       - ["1D"] for 1 dimensional PSD
+#       - ["2D"] for 2 dimensional PSD
+#       - ["window"] for a snapshot of the 1D psd to check slope
 #
 #   - sf: a list like [2,4,6...] which states the dl in cells for structure function.
 #
 #   - kurtosis: again a list like [2,4,6...].
 
 config["settings"] = {
-    "start_frame" : 50,
+    "start_frame" : 48,
     "end_frame" : 50,
 
-    "output_dir" : "Animations/test/mathi_sim001",
+    "output_dir" : "Animations/test/",
 
     "animations" : [
-	                ("sf", "B", "x", [32,64,128,256,512,1024]),
-                    ("kurtosis", "B", "x", [32,64,128,256,512,1024]),
-                    ("rms", "residual", "all", [""]),
-                    ("fourier", "B", "perp", ["1D"]),
-                    ("fourier", "B", "perp", ["window", 50]),
-                    ("2D", "J", "z", "unit")
+	                #("sf", "B", "x", [32,64,128,256,512,1024]),
+                    #("kurtosis", "B", "x", [32,64,128,256,512,1024]),
+                    #("rms", "residual", "all", [""]),
+                    #("fourier", "B", "perp", ["1D"]),
+                    #("fourier", "B", "perp", ["window", 50]),
+                    #("2D", "J", "z", "unit"),
+                    ("reconnection", "J", "z", "unit")
             ],
 
     "filetype" : ".mp4"

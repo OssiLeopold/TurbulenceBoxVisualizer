@@ -20,11 +20,11 @@ class AnimationSpecs():
     def __init__(
         self, animation_type, variable, component, animation_specific
         ):
-        if animation_type not in ["2D", "triple", "fourier", "sf", "kurtosis", "rms"]:
+        if animation_type not in ["2D", "triple", "fourier", "sf", "kurtosis", "rms", "reconnection"]:
             print("animation_type defined incorrectly")
             sys.exit(1)
 
-        if variable not in ["B", "E", "v", "J", "rho", "residual", "E_vs_B", "J_vs_B", "E_vs_A", "J_vs_A"]:
+        if variable not in ["B", "E", "v", "J", "rho", "residual"]:
             print("variable defined incorrectly")
             sys.exit(1)
 
@@ -32,43 +32,15 @@ class AnimationSpecs():
             print("filetype defined incorrectly")
             sys.exit(1)
 
-        if animation_type == "2D" or animation_type == "triple":
+        if animation_type in ["2D", "triple", "reconnection"]:
             if animation_specific == "unitless":
                 self.unitless = True
-                self.memory_space_norm = ""
             else:
                 self.unitless = False
         
-
-        self.fourier_direc = ""
-        
         if animation_type == "fourier":
-            if animation_specific[0] == "x" or animation_specific[0] == "y":
-                self.fourier_type = "principle"
-                self.fourier_direc = animation_specific[0]
-                self.fourier_loc = animation_specific[1]
-
-            elif animation_specific[0] == "diag":
-                self.fourier_type = "diag"
-                self.fourier_direc = animation_specific[1]
-
-            elif animation_specific[0] == "trace":
-                self.fourier_type = "trace"
-                self.fourier_loc_x = animation_specific[1]
-                self.fourier_loc_y = animation_specific[2]
-
-            elif animation_specific[0] == "trace_diag":
-                self.fourier_type = "trace_diag"
-
-            elif animation_specific[0] == "1D":
-                self.fourier_type = "1D"
-
-            elif animation_specific[0] == "2D":
-                self.fourier_type = "2D"
-
-            elif animation_specific[0] == "window":
-                self.fourier_type = "window"
-                self.frame = animation_specific[1]
+            if animation_specific[0] in ["1D", "2D", "window"]:
+                self.fourier_type = animation_specific[0]
 
             else:
                 print("fourier spec defined incorrectly")
@@ -79,7 +51,7 @@ class AnimationSpecs():
 
         self.animation_type = animation_type
 
-        if variable not in ["residual", "J_vs_B", "E_vs_B", "E_vs_A", "J_vs_A"]:
+        if variable != "residual":
             self.variable = translate[variable][0]
             self.variable_name = variable
             self.component = component
@@ -93,12 +65,6 @@ class AnimationSpecs():
 
         self.bulkpath = bulkpath
         self.memory_space = {}
-        self.shape = {}
-        self.dtype = ""
-        
-        self.time = ""
-        self.time_shape = 0
-        self.time_dtype = ""
 
         if variable == "rho":
             name = f"{name_beginning}_{animation_type}_{self.variable_name}{filetype}"

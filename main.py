@@ -14,6 +14,7 @@ from utils.animation_fourier import AnimationFourier
 from utils.animation_sf import AnimationSF
 from utils.animation_kurtosis import AnimationKurtosis
 from utils.animation_rms import AnimationRMS
+from utils.animation_reconnection import AnimationReconnection
 
 config = ConfigParser()
 config.read(".TurbulenceBoxVisualizer.ini")
@@ -71,17 +72,11 @@ def variables_to_be(animations):
             variables_to_be.add(("vg_j", "z"))
             variables_to_be.add(("vg_ttensor", "pass"))
 
-        elif object.variable in ["J_vs_B", "J_vs_A"]:
+        elif object.animation_type == "reconnection":
             for component in ["x","y"]:
                 variables_to_be.add(("vg_b_vol", component))
 
-            variables_to_be.add(("vg_j", "z"))
-
-        elif object.variable in ["E_vs_B", "E_vs_A"]:
-            for component in ["x","y"]:
-                variables_to_be.add(("vg_b_vol", component))
-
-            variables_to_be.add(("vg_e_vol", "z"))
+            variables_to_be.add((object.variable, object.component))
 
         else:
             variables_to_be.add((object.variable, object.component))
@@ -127,101 +122,13 @@ def fetcher(variable_component):
     shm_array = np.ndarray(data.shape, dtype=data.dtype, buffer=shm.buf)
     shm_array[:] = data[:]  # Copy data into shared memory
     block = {
-        "name": shm.name,
+        "address": shm.name,
         "shape": data.shape,
         "dtype": data.dtype,
         "shm": shm,
-        "variable": variable_component[0],
-        "component": variable_component[1]
     }
     unregister(shm._name, 'shared_memory')
-    return block
-
-# Include shared_memory adress and relevant data to animation objects
-def mem_space_includer(animations, shared_blocks):
-    for object in animations:
-        for block in shared_blocks:
-            if object.variable == block["variable"] and object.component == block["component"]:
-                object.memory_space = block["name"]
-                object.shape = block["shape"]
-                object.dtype = block["dtype"]
-            elif block["variable"] == "time":
-                object.time = block["name"]
-                object.time_shape = block["shape"]
-                object.time_dtype = block["dtype"]
-                
-        if object.animation_type in ["2D", "triple"] and object.unitless == True:
-            for block in shared_blocks:
-                if block["variable"] == object.variable and block["component"] == "magnitude":
-                    object.memory_space_norm = block["name"]
-
-        if object.component == "perp":
-            for block in shared_blocks:
-                if block["variable"] == object.variable and block["component"] in ["x","y"]:
-                    object.memory_space[block["component"]] = block["name"]
-                    object.shape[block["component"]] = block["shape"]
-                    object.dtype = block["dtype"]
-
-        if object.animation_type == "triple":
-            for block in shared_blocks:
-                if object.variable == block["variable"] and block["component"] in ["x","y","z"]:
-                    object.memory_space[block["component"]] = block["name"]
-                    object.shape[block["component"]] = block["shape"]
-                    object.dtype = block["dtype"]
-
-        if object.animation_type == "rms" and object.component == "pass":
-            for block in shared_blocks:
-                if object.variable == block["variable"] and block["component"] in ["x","y","z"]:
-                    object.memory_space[block["component"]] = block["name"]
-                    object.shape[block["component"]] = block["shape"]
-                    object.dtype = block["dtype"]
-
-        if object.variable == "residual":
-            for block in shared_blocks:
-                if "vg_b_vol" == block["variable"] and block["component"] in ["x", "y", "z"]:
-                    object.memory_space[block["variable"] + block["component"]] = block["name"]
-                    object.shape[block["variable"]] = block["shape"]
-                    object.dtype = block["dtype"]
-                if "proton/vg_v" == block["variable"] and block["component"] in ["x", "y", "z"]:
-                    object.memory_space[block["variable"] + block["component"]] = block["name"]
-                    object.shape[block["variable"]] = block["shape"]
-                    object.dtype = block["dtype"]
-                if "proton/vg_rho" == block["variable"]:
-                    object.memory_space[block["variable"]] = block["name"]
-                    object.shape[block["variable"]] = block["shape"]
-                    object.dtype = block["dtype"]
-                if "vg_ttensor" == block["variable"]:
-                    object.memory_space[block["variable"]] = block["name"]
-                    object.shape[block["variable"]] = block["shape"]
-                    object.dtype = block["dtype"]
-                if "vg_j" == block["variable"]:
-                    object.memory_space[block["variable"]] = block["name"]
-                    object.shape[block["variable"]] = block["shape"]
-                    object.dtype = block["dtype"]
-
-        if object.variable in ["J_vs_B", "J_vs_A"]:
-            for block in shared_blocks:
-                if "vg_b_vol" == block["variable"] and block["component"] in ["x", "y"]:
-                        object.memory_space[block["variable"] + block["component"]] = block["name"]
-                        object.shape[block["variable"] + block["component"]] = block["shape"]
-                        object.dtype = block["dtype"]
-                if "vg_j" == block["variable"]:
-                        object.memory_space["background"] = block["name"]
-                        object.shape["background"] = block["shape"]
-                        object.dtype = block["dtype"]
-
-        if object.variable in ["E_vs_B", "E_vs_A"]:
-            for block in shared_blocks:
-                if "vg_b_vol" == block["variable"] and block["component"] in ["x", "y"]:
-                        object.memory_space[block["variable"] + block["component"]] = block["name"]
-                        object.shape[block["variable"] + block["component"]] = block["shape"]
-                        object.dtype = block["dtype"]
-                if "vg_e_vol" == block["variable"]:
-                        object.memory_space["background"] = block["name"]
-                        object.shape["background"] = block["shape"]
-                        object.dtype = block["dtype"]
-                    
-
+    return (variable_component[0] + variable_component[1], block)
 
 # Function for launching correct animation for each animation object
 def chooser(object):
@@ -238,6 +145,8 @@ def chooser(object):
         AnimationKurtosis(object)
     elif object.animation_type == "rms":
         AnimationRMS(object)
+    elif object.animation_type == "reconnection":
+        AnimationReconnection(object)
 
 if __name__ == "__main__":
     animations = cfg_to_AnimationSpecs(animations)
@@ -249,19 +158,21 @@ if __name__ == "__main__":
     print(variables)
 
     # Fetch all needed data into separate shared memory blocks
-    """ shared_blocks = []
+    shared_blocks = []
     with mp.Pool(len(variables)) as process:
         shared_blocks = process.map(fetcher, variables)
 
-    mem_space_includer(animations, shared_blocks)
-    
-    # Debugging
-    for object in animations:
-        print(object.memory_space)
-        print(object.time)
+    shared_blocks_dict = {}
+    for i in range(len(shared_blocks)):
+        shared_blocks_dict[shared_blocks[i][0]] = shared_blocks[i][1]
 
-    for block in shared_blocks:
-        print(block)
+    # Include memory space addresses to animation objects
+    for animation in animations:
+        animation.memory_space = shared_blocks_dict
+
+    # Debugging
+    for key, value in shared_blocks_dict.items():
+        print(key, value)
 
     # Launch a separate process for each AnimationSpecs object
     with mp.Pool(len(animations)) as process:
@@ -269,5 +180,5 @@ if __name__ == "__main__":
 
     # Delete shared memory
     for block in shared_blocks:
-        block['shm'].close()
-        block['shm'].unlink()  """
+        block[1]['shm'].close()
+        block[1]['shm'].unlink()
