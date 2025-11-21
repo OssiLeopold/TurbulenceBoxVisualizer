@@ -48,64 +48,51 @@ def cellids_fetcher(object):
 
 # Define which variables need to be fetched. Employ logic to avoid duplicates.
 def variables_to_be(animations):
-    variables_to_be = [] # or not?
+    variables_to_be = set() # or not?
     for object in animations:
         if object.animation_type == "triple":
             for component in ["x","y","z"]:
-                if (object.variable, component) not in variables_to_be:
-                    variables_to_be.append((object.variable, component))
+                variables_to_be.add((object.variable, component))
 
         elif object.animation_type == "rms" and object.component == "pass":
             for component in ["x","y","z"]:
-                if (object.variable, component) not in variables_to_be:
-                    variables_to_be.append((object.variable, component))
+                variables_to_be.add((object.variable, component))
 
         elif object.component == "perp":
             for component in ["x","y"]:
-                if (object.variable, component) not in variables_to_be:
-                    variables_to_be.append((object.variable, component))
+                variables_to_be.add((object.variable, component))
 
         elif object.variable == "residual":
             for component in ["x","y","z"]:
-                if ("vg_b_vol", component) not in variables_to_be:
-                    variables_to_be.append(("vg_b_vol", component))
-                if ("proton/vg_v", component) not in variables_to_be:
-                    variables_to_be.append(("proton/vg_v", component))
+                variables_to_be.add(("vg_b_vol", component))
+                variables_to_be.add(("proton/vg_v", component))
 
-            if ("proton/vg_rho", "pass") not in variables_to_be:
-                variables_to_be.append(("proton/vg_rho", "pass"))
-            
-            if ("vg_j", "z") not in variables_to_be:
-                variables_to_be.append(("vg_j", "z"))
-
-            if ("vg_ttensor", "pass") not in variables_to_be:
-                variables_to_be.append(("vg_ttensor", "pass"))
+            variables_to_be.add(("proton/vg_rho", "pass"))
+            variables_to_be.add(("vg_j", "z"))
+            variables_to_be.add(("vg_ttensor", "pass"))
 
         elif object.variable in ["J_vs_B", "J_vs_A"]:
             for component in ["x","y"]:
-                if ("vg_b_vol", component) not in variables_to_be:
-                    variables_to_be.append(("vg_b_vol", component))
-            if ("vg_j", "z") not in variables_to_be:
-                variables_to_be.append(("vg_j", "z"))
+                variables_to_be.add(("vg_b_vol", component))
+
+            variables_to_be.add(("vg_j", "z"))
 
         elif object.variable in ["E_vs_B", "E_vs_A"]:
             for component in ["x","y"]:
-                if ("vg_b_vol", component) not in variables_to_be:
-                    variables_to_be.append(("vg_b_vol", component))
-            if ("vg_e_vol", "z") not in variables_to_be:
-                variables_to_be.append(("vg_e_vol", "z"))
+                variables_to_be.add(("vg_b_vol", component))
 
-        elif (object.variable, object.component) not in variables_to_be:
-            variables_to_be.append((object.variable, object.component))
+            variables_to_be.add(("vg_e_vol", "z"))
+
+        else:
+            variables_to_be.add((object.variable, object.component))
         
-        if object.animation_type == "2D" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be and object.component != "pass":
-            variables_to_be.append((object.variable, "magnitude"))
+        if object.animation_type == "2D" and object.unitless == True and object.component != "pass":
+            variables_to_be.add((object.variable, "magnitude"))
 
-        if object.animation_type == "triple" and object.unitless == True and (object.variable, "magnitude") not in variables_to_be:
-            variables_to_be.append((object.variable, "magnitude"))
+        if object.animation_type == "triple" and object.unitless == True:
+            variables_to_be.add((object.variable, "magnitude"))
 
-        if ("time", "pass") not in variables_to_be:
-            variables_to_be.append(("time", "pass"))
+        variables_to_be.add(("time", "pass"))
 
     return variables_to_be
 
@@ -259,9 +246,10 @@ if __name__ == "__main__":
     cellids = cellids_fetcher(animations[0])
 
     variables = variables_to_be(animations)
+    print(variables)
 
     # Fetch all needed data into separate shared memory blocks
-    shared_blocks = []
+    """ shared_blocks = []
     with mp.Pool(len(variables)) as process:
         shared_blocks = process.map(fetcher, variables)
 
@@ -271,9 +259,6 @@ if __name__ == "__main__":
     for object in animations:
         print(object.memory_space)
         print(object.time)
-
-    """ for object in animations:
-        print(object.memory_space_norm)"""
 
     for block in shared_blocks:
         print(block)
@@ -285,4 +270,4 @@ if __name__ == "__main__":
     # Delete shared memory
     for block in shared_blocks:
         block['shm'].close()
-        block['shm'].unlink() 
+        block['shm'].unlink()  """

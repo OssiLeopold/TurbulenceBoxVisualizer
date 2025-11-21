@@ -51,12 +51,12 @@ config["settings"] = {
     "output_dir" : "Animations/test/mathi_sim001",
 
     "animations" : [
-	                #("sf", "B", "x", [32,64,128,256,512,1024]),
-                    #("kurtosis", "B", "x", [32,64,128,256,512,1024]),
-                    #("rms", "residual", "all", [""]),
-                    #("fourier", "B", "perp", ["1D"]),
+	                ("sf", "B", "x", [32,64,128,256,512,1024]),
+                    ("kurtosis", "B", "x", [32,64,128,256,512,1024]),
+                    ("rms", "residual", "all", [""]),
+                    ("fourier", "B", "perp", ["1D"]),
                     ("fourier", "B", "perp", ["window", 50]),
-                    #("2D", "J", "z", "unit")
+                    ("2D", "J", "z", "unit")
             ],
 
     "filetype" : ".mp4"
