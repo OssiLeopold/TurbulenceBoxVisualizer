@@ -106,8 +106,8 @@ class Animation2D():
         return self.p[0]
 
     def animation_unit(self):
-        shm = shared_memory.SharedMemory(name=object.memory_space)
-        self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
+        shm = shared_memory.SharedMemory(name=self.object.memory_space)
+        self.data = np.ndarray(self.object.shape, dtype=self.object.dtype, buffer=shm.buf)
 
         fig, self.ax = plt.subplots()
 

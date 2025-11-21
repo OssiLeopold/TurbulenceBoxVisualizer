@@ -5,7 +5,7 @@ config = ConfigParser()
 config["paths"] = {
     "ffmpeg_path" : "/home/elmer/turso/appl/ffmpeg/bin/ffmpeg",
     "latex_path" : "/home/elmer/turso/appl/tex-basic/texlive/2023/bin/x86_64-linux:",
-    "bulkpath" : "/home/elmer/mahti/bulks_mount/test/"
+    "bulkpath" : "/home/elmer/mahti/bulks_mount/mahti_sim001/"
 }
 
 # Define what animations are to be produced:
@@ -45,13 +45,18 @@ config["paths"] = {
 #   - kurtosis: again a list like [2,4,6...].
 
 config["settings"] = {
-    "start_frame" : 0,
-    "end_frame" : 1,
+    "start_frame" : 50,
+    "end_frame" : 50,
 
-    "output_dir" : "Animations/test/test",
+    "output_dir" : "Animations/test/mathi_sim001",
 
     "animations" : [
-	                ("triple", "B", "pass", "unit")
+	                #("sf", "B", "x", [32,64,128,256,512,1024]),
+                    #("kurtosis", "B", "x", [32,64,128,256,512,1024]),
+                    #("rms", "residual", "all", [""]),
+                    #("fourier", "B", "perp", ["1D"]),
+                    ("fourier", "B", "perp", ["window", 50]),
+                    #("2D", "J", "z", "unit")
             ],
 
     "filetype" : ".mp4"

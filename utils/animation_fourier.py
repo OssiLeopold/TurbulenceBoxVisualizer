@@ -187,7 +187,7 @@ class AnimationFourier():
         return self.p
 
     def window(self):
-        self.fig, self.ax = plt.subplots()
+        self.fig, self.ax = plt.subplots(1,2, figsize=(12,5))
 
         # Reshape raw data into mesh
         data_x_mesh = self.data_x[0].reshape((self.x_length, self.x_length))
@@ -227,41 +227,46 @@ class AnimationFourier():
         prot_plas_freq = np.sqrt(1e6 * (1.602176634 * 10**(-19))**2 / (8.8541878128 * 10**(-12) * 1.67262192595 * 10**(-27)))
         self.dp = 299792458 / prot_plas_freq
         self.k_vals = 0.5 * (k_bin_edges[1:] + k_bin_edges[:-1]) * self.dp
+
+        delta_k = [2,3,4]
+        gradients = [[] for i in range(len(delta_k))]
+
+        for i, dk in enumerate(delta_k):
+            for k_val in self.k_vals:
+                window = (self.k_vals >= k_val) & (self.k_vals <= k_val * dk)
+                k_window = self.k_vals[window]
+                PSD_window = self.PSD_1D_perp[window]
+                if len(k_window) > 1:
+                    #parameters, covariance = sp.optimize.curve_fit(self.fit, np.log(k_window), np.log(PSD_window), maxfev=10000)
+                    gradient = (np.log10(PSD_window[-1]) - np.log10(PSD_window[0])) / (np.log10(k_window[-1]) - np.log10(k_window[0]))
+                    gradients[i].append(gradient)
+                else:
+                    gradients[i].append(0)
+        
+        for i in range(len(delta_k)):
+            self.ax[1].plot(self.k_vals, gradients[i], label=f"{delta_k[i]}")
  
-        self.p = self.ax.plot(self.k_vals,self.PSD_1D_perp)[0]
+        self.ax[1].set_ylim(-10,1)
+        self.ax[1].set_xscale("log")
+        self.ax[1].legend()
 
-        self.ax.set_xscale("log")
-        self.ax.set_yscale("log")
+        self.ax[0].scatter(self.k_vals,self.PSD_1D_perp)
 
-        self.ax.set_ylim(1e-10, Max*2)
-        self.ax.set_xlim(self.k_vals[0]*0.9,self.k_vals[-1])
+        self.ax[0].set_xscale("log")
+        self.ax[0].set_yscale("log")
+
+        self.ax[0].set_ylim(1e-10, Max*2)
+        self.ax[0].set_xlim(self.k_vals[0]*0.9,self.k_vals[-1])
 
         xlabel = f"$k_{{\\perp}}d_p$"
-        self.ax.set_xlabel(r"{}".format(xlabel))
+        self.ax[0].set_xlabel(r"{}".format(xlabel))
         ylabel = f"$P(k_{{\\perp}})$"
-        self.ax.set_ylabel(r"{}".format(ylabel))
+        self.ax[0].set_ylabel(r"{}".format(ylabel))
 
-        #self.timelabel = self.ax.text(0.98, 1.02, "", transform=self.ax.transAxes)
+        self.fig.savefig(f"mathi001_window_68.jpg")
 
-        self.secant_line, = self.ax.plot([], [], lw=2, linestyle="--")     # the secant segment
-        self.p1_marker,   = self.ax.plot([], [], marker="o", ms=7, ls="")  # start point
-        self.p2_marker,   = self.ax.plot([], [], marker="o", ms=7, ls="")  # end point
-        self.slope_text = self.ax.text(0.02, 0.98, "", transform=self.ax.transAxes,
-                            va="top", ha="left",
-                            bbox=dict(boxstyle="round", fc="w", alpha=0.8))
-
-        span = SpanSelector(
-        self.ax, self.onselect, "horizontal",
-        useblit=True, interactive=True, props=dict(alpha=0.2),
-        grab_range=5  # pixels; makes handles easier to grab
-)       
-
-        plt.ioff()
-        plt.show()
-
-
-    def y_at(self, xq):
-        return np.interp(xq, self.k_vals, self.PSD_1D_perp)
+    def fit(self, log_k, A, B):
+        return A + B * log_k
 
     def onselect(self, xmin, xmax):
         # Normalize order
