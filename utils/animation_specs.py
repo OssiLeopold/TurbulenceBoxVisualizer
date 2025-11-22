@@ -20,17 +20,6 @@ class AnimationSpecs():
     def __init__(
         self, animation_type, variable, component, animation_specific
         ):
-        if animation_type not in ["2D", "triple", "fourier", "sf", "kurtosis", "rms", "reconnection"]:
-            print("animation_type defined incorrectly")
-            sys.exit(1)
-
-        if variable not in ["B", "E", "v", "J", "rho", "residual"]:
-            print("variable defined incorrectly")
-            sys.exit(1)
-
-        if filetype not in [".mp4"]:
-            print("filetype defined incorrectly")
-            sys.exit(1)
 
         if animation_type in ["2D", "triple", "reconnection"]:
             if animation_specific == "unitless":
@@ -51,7 +40,7 @@ class AnimationSpecs():
 
         self.animation_type = animation_type
 
-        if variable != "residual":
+        if animation_type != "franci":
             self.variable = translate[variable][0]
             self.variable_name = variable
             self.component = component

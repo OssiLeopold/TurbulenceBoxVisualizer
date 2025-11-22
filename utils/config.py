@@ -47,11 +47,11 @@ config["settings"] = {
     "animations" : [
 	                #("sf", "B", "x", [32,64,128,256,512,1024]),
                     #("kurtosis", "B", "x", [32,64,128,256,512,1024]),
-                    #("rms", "residual", "all", [""]),
+                    ("franci", "", "", [""]),
                     #("fourier", "B", "perp", ["1D"]),
                     #("fourier", "B", "perp", ["window"]),
                     #("2D", "J", "z", "unit"),
-                    ("triple", "B", "pass", "unitless"),
+                    #("triple", "B", "pass", "unitless"),
                     #("reconnection", "J", "z", "unit")
             ],
 

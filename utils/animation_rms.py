@@ -110,22 +110,11 @@ class AnimationRMS():
         self.axes[2].legend()
         self.axes[3].legend()
 
-        #anim = animation.FuncAnimation(fig, self.update_residual, frames = self.frames + 1, interval = 20)
-        
-        #writer = FFMpegWriter(fps=5)
         self.object.name = self.object.name[0:-3] + "jpg"
 
         fig.savefig(self.object.name)
 
         plt.close()
-
-    def update_residual(self, frame):
-        self.p[0][0].set_data(self.time[:frame], self.b_perp_rms[:frame])
-        self.p[1][0].set_data(self.time[:frame], self.b_parr_rms[:frame])
-        self.p[2][0].set_data(self.time[:frame], self.v_perp_rms[:frame])
-        self.p[3][0].set_data(self.time[:frame], self.v_parr_rms[:frame])
-        self.p[4][0].set_data(self.time[:frame], self.sigma_c[:frame])
-        self.p[5][0].set_data(self.time[:frame], self.sigma_r[:frame])
 
     def animation_one(self):
         shm = shared_memory.SharedMemory(name=self.object.memory_space)
