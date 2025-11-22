@@ -23,20 +23,11 @@ os.environ['PTNOLATEX']='1'
 class AnimationFourier():
     def __init__(self, object):
         self.object = object
+        self.memory_space = object.memory_space
         
-        if object.component in ["x","y","z"]:
-            shm = shared_memory.SharedMemory(name=object.memory_space)
-            self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
-            self.frames = len(self.data)
-        elif object.component == "perp":
-            shm_x = shared_memory.SharedMemory(name=object.memory_space["x"])
-            shm_y = shared_memory.SharedMemory(name=object.memory_space["y"])
-            self.data_x = np.ndarray(object.shape["x"], dtype=object.dtype, buffer=shm_x.buf)
-            self.data_y = np.ndarray(object.shape["y"], dtype=object.dtype, buffer=shm_y.buf)
-            self.frames = len(self.data_x)
-        
-        shm_time = shared_memory.SharedMemory(name=object.time)
-        self.time = np.ndarray(object.time_shape, dtype=object.time_dtype, buffer=shm_time.buf)
+        shm_time = shared_memory.SharedMemory(name=self.memory_space["timepass"]["address"])
+        self.time = np.ndarray(self.memory_space["timepass"]["shape"], dtype=self.memory_space["timepass"]["dtype"], buffer=shm_time.buf)
+        self.frames = len(self.time)
         
         self.vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000000.vlsv")
         self.cellids = self.vlsvobj.read_variable("CellID")
@@ -54,9 +45,18 @@ class AnimationFourier():
     def animation_1D_PSD(self):
         fig, self.ax = plt.subplots()
 
+        mem_x = self.memory_space[self.object.variable + "x"]
+        mem_y = self.memory_space[self.object.variable + "y"]
+
+        shm_x = shared_memory.SharedMemory(name=mem_x["address"])
+        shm_y = shared_memory.SharedMemory(name=mem_y["address"])
+        
+        data_x = np.ndarray(mem_x["shape"], dtype=mem_x["dtype"], buffer=shm_x.buf)
+        data_y = np.ndarray(mem_y["shape"], dtype=mem_y["dtype"], buffer=shm_y.buf)
+
         # Reshape raw data into mesh
-        data_x_mesh = self.data_x.reshape((self.frames, self.x_length, self.x_length))
-        data_y_mesh = self.data_y.reshape((self.frames, self.x_length, self.x_length))
+        data_x_mesh = data_x.reshape((self.frames, self.x_length, self.x_length))
+        data_y_mesh = data_y.reshape((self.frames, self.x_length, self.x_length))
 
         # Fourier transfrom meshshes
         data_x_mesh_ft = np.abs(sp.fft.fft2(data_x_mesh, workers = 8, axes=(-2, -1)))
@@ -133,9 +133,18 @@ class AnimationFourier():
     def animation_2D_PSD(self):
         fig, self.ax = plt.subplots()
 
+        mem_x = self.memory_space[self.object.variable + "x"]
+        mem_y = self.memory_space[self.object.variable + "y"]
+
+        shm_x = shared_memory.SharedMemory(name=mem_x["address"])
+        shm_y = shared_memory.SharedMemory(name=mem_y["address"])
+        
+        data_x = np.ndarray(mem_x["shape"], dtype=mem_x["dtype"], buffer=shm_x.buf)
+        data_y = np.ndarray(mem_y["shape"], dtype=mem_y["dtype"], buffer=shm_y.buf)
+
         # Reshape raw data into mesh
-        data_x_mesh = self.data_x.reshape((self.frames, self.x_length, self.x_length))
-        data_y_mesh = self.data_y.reshape((self.frames, self.x_length, self.x_length))
+        data_x_mesh = data_x.reshape((self.frames, self.x_length, self.x_length))
+        data_y_mesh = data_y.reshape((self.frames, self.x_length, self.x_length))
 
         # Fourier transfrom meshshes
         data_x_mesh_ft = np.abs(sp.fft.fftshift(sp.fft.fft2(data_x_mesh, workers = 8, axes=(-2, -1)), axes = (-2,-1)))
@@ -181,9 +190,18 @@ class AnimationFourier():
     def window(self):
         self.fig, self.ax = plt.subplots(1,2, figsize=(12,5))
 
+        mem_x = self.memory_space[self.object.variable + "x"]
+        mem_y = self.memory_space[self.object.variable + "y"]
+
+        shm_x = shared_memory.SharedMemory(name=mem_x["address"])
+        shm_y = shared_memory.SharedMemory(name=mem_y["address"])
+        
+        data_x = np.ndarray(mem_x["shape"], dtype=mem_x["dtype"], buffer=shm_x.buf)
+        data_y = np.ndarray(mem_y["shape"], dtype=mem_y["dtype"], buffer=shm_y.buf)
+
         # Reshape raw data into mesh
-        data_x_mesh = self.data_x[0].reshape((self.x_length, self.x_length))
-        data_y_mesh = self.data_y[0].reshape((self.x_length, self.x_length))
+        data_x_mesh = data_x[0].reshape((self.x_length, self.x_length))
+        data_y_mesh = data_y[0].reshape((self.x_length, self.x_length))
 
         # Fourier transfrom meshshes
         data_x_mesh_ft = np.abs(sp.fft.fft2(data_x_mesh, workers = 8))
@@ -255,7 +273,7 @@ class AnimationFourier():
         ylabel = f"$P(k_{{\\perp}})$"
         self.ax[0].set_ylabel(r"{}".format(ylabel))
 
-        self.fig.savefig(f"mathi001_window_68.jpg")
+        self.fig.savefig(f"sim32_window_50.jpg")
 
     def fit(self, log_k, A, B):
         return A + B * log_k    

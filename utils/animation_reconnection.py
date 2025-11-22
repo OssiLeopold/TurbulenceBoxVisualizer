@@ -54,8 +54,8 @@ class AnimationReconnection():
     def reconnection_unit(self):
         self.fig, self.ax = plt.subplots()
 
-        mem_Bx = self.object.memory_space["vg_b_vol" + "x"]
-        mem_By = self.object.memory_space["vg_b_vol" + "y"]
+        mem_Bx = self.memory_space["vg_b_vol" + "x"]
+        mem_By = self.memory_space["vg_b_vol" + "y"]
 
         shm_Bx = shared_memory.SharedMemory(name=mem_Bx["address"])
         shm_By = shared_memory.SharedMemory(name=mem_By["address"])

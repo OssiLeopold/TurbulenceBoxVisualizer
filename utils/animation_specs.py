@@ -76,11 +76,7 @@ class AnimationSpecs():
             name = f"{name_beginning}_{animation_type}_{self.variable_name}{filetype}"
 
         elif animation_type == "fourier":
-            
-            if self.fourier_direc == "x" or self.fourier_direc == "y":
-                name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}_{self.fourier_direc}_{self.fourier_loc}{filetype}"
-            else:
-                name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}_{self.fourier_type}{filetype}"
+            name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}_{self.fourier_type}{filetype}"
             
         elif animation_type == "sf":
             name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}_{self.delta_ls[0]}-{self.delta_ls[-1]}{filetype}"

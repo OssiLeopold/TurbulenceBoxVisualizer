@@ -20,16 +20,22 @@ os.environ['PTNOLATEX']='1'
 class AnimationTriple():
     def __init__(self, object):
         self.object = object
+        self.memory_space = object.memory_space
 
-        shm_x = shared_memory.SharedMemory(name=object.memory_space["x"])
-        shm_y = shared_memory.SharedMemory(name=object.memory_space["y"])
-        shm_z = shared_memory.SharedMemory(name=object.memory_space["z"])
-        self.data_x = np.ndarray(object.shape["x"], dtype=object.dtype, buffer=shm_x.buf)
-        self.data_y = np.ndarray(object.shape["y"], dtype=object.dtype, buffer=shm_y.buf)
-        self.data_z = np.ndarray(object.shape["z"], dtype=object.dtype, buffer=shm_z.buf)
+        mem_x = self.memory_space[object.variable + "x"]
+        mem_y = self.memory_space[object.variable + "y"]
+        mem_z = self.memory_space[object.variable + "z"]
+
+        shm_x = shared_memory.SharedMemory(name=mem_x["address"])
+        shm_y = shared_memory.SharedMemory(name=mem_y["address"])
+        shm_z = shared_memory.SharedMemory(name=mem_z["address"])
+
+        self.data_x = np.ndarray(mem_x["shape"], dtype=mem_x["dtype"], buffer=shm_x.buf)
+        self.data_y = np.ndarray(mem_y["shape"], dtype=mem_y["dtype"], buffer=shm_y.buf)
+        self.data_z = np.ndarray(mem_z["shape"], dtype=mem_z["dtype"], buffer=shm_z.buf)
         
-        shm_time = shared_memory.SharedMemory(name=object.time)
-        self.time = np.ndarray(object.time_shape, dtype=object.time_dtype, buffer=shm_time.buf)
+        shm_time = shared_memory.SharedMemory(name=self.memory_space["timepass"]["address"])
+        self.time = np.ndarray(self.memory_space["timepass"]["shape"], dtype=self.memory_space["timepass"]["dtype"], buffer=shm_time.buf)
 
         prot_plas_freq = np.sqrt(1e6 * (1.602176634 * 10**(-19))**2 / (8.8541878128 * 10**(-12) * 1.67262192595 * 10**(-27)))
         dp = 299792458 / prot_plas_freq
@@ -51,8 +57,9 @@ class AnimationTriple():
             self.animation_unit()
 
     def animation_unitless(self):
-        shm_norm = shared_memory.SharedMemory(name=self.object.memory_space_norm)
-        mag = np.ndarray(self.object.shape["x"], dtype=self.object.dtype, buffer=shm_norm.buf)
+        mem_norm = self.memory_space[self.object.variable + "magnitude"]
+        shm_norm = shared_memory.SharedMemory(name=mem_norm["address"])
+        mag = np.ndarray(mem_norm["shape"], dtype=mem_norm["dtype"], buffer=shm_norm.buf)
 
         mag_average = np.mean(mag, axis=1).reshape((self.frames, 1))
 
@@ -90,24 +97,12 @@ class AnimationTriple():
             self.axes[i].set_ylabel(r'$y/d_p$', rotation=0, fontsize=12)
 
         self.timelabel = self.axes[2].text(0.98, 1.02, "",transform=self.axes[2].transAxes, fontsize = 16)
-        
 
-        anim = animation.FuncAnimation(fig, self.unitless_update, frames = self.frames, interval = 20)
+        anim = animation.FuncAnimation(fig, self.update, frames = self.frames, interval = 20)
 
         writer = FFMpegWriter(fps=5)
         anim.save(self.object.name, writer = writer)
         plt.close()
-
-    def unitless_update(self,frame):
-        for i in range(3):
-            self.p[i].remove()
-        self.timelabel.set_text(f"{self.time[frame]:.1f}s")
-        self.p = [
-            self.axes[0].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_x[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max),
-            self.axes[1].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_y[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max),
-            self.axes[2].pcolormesh(self.x_mesh, self.y_mesh, self.data_mesh_z[frame], cmap = "bwr", vmin=self.Min, vmax=self.Max)
-        ]
-        return self.p
 
     def animation_unit(self):
         fig, self.axes = plt.subplots(1,3, figsize=(26,8))
@@ -115,9 +110,6 @@ class AnimationTriple():
 
         self.Min = np.min(np.array([self.data_x,self.data_y,self.data_z]).flatten()) / self.object.unit
         self.Max = np.max(np.array([self.data_x,self.data_y,self.data_z]).flatten()) / self.object.unit
-
-        print(self.Min)
-        print(self.Max)
 
         if abs(self.Min) > abs(self.Max):
             self.Max = -self.Min
@@ -146,13 +138,13 @@ class AnimationTriple():
         
         self.timelabel = self.axes[2].text(0.98, 1.02, "",transform=self.axes[2].transAxes, fontsize = 16)
 
-        anim = animation.FuncAnimation(fig, self.unit_update, frames = self.frames, interval = 20)
+        anim = animation.FuncAnimation(fig, self.update, frames = self.frames, interval = 20)
 
         writer = FFMpegWriter(fps=5)
         anim.save(self.object.name, writer = writer)
         plt.close()
 
-    def unit_update(self,frame):
+    def update(self,frame):
         for i in range(3):
             self.p[i].remove()
         self.timelabel.set_text(f"{self.time[frame]:.1f}s")
