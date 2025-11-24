@@ -19,6 +19,13 @@ class PlotFranci():
     def __init__(self, object):
         memory_space = object.memory_space
 
+        vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000000.vlsv")
+        cellids = vlsvobj.read_variable("CellID")
+
+        x_length = int(vlsvobj.read_parameter("xcells_ini"))
+        x = np.array(vlsvobj.get_cell_coordinates(np.sort(cellids))).T[0]
+        dx = np.diff(x[0:x_length])[0]
+
         mu_0 = 4 * np.pi * 10**(-7)
         m_p = 1.67262192595 * 10**(-27)
         T_0 = 500 * 10**3
@@ -48,9 +55,12 @@ class PlotFranci():
         shm_T = shared_memory.SharedMemory(name=mem_T["address"])
 
         rho = np.ndarray(mem_rho["shape"], dtype = mem_rho["dtype"], buffer = shm_rho.buf) * m_p
-        bx = np.ndarray(mem_Bx["shape"], dtype = mem_Bx["dtype"], buffer = shm_Bx.buf) / np.sqrt(mu_0 * rho)
-        by = np.ndarray(mem_By["shape"], dtype = mem_By["dtype"], buffer = shm_By.buf) / np.sqrt(mu_0 * rho)
-        bz = np.ndarray(mem_Bz["shape"], dtype = mem_Bz["dtype"], buffer = shm_Bz.buf) / np.sqrt(mu_0 * rho)
+        Bx = np.ndarray(mem_Bx["shape"], dtype = mem_Bx["dtype"], buffer = shm_Bx.buf)
+        By = np.ndarray(mem_By["shape"], dtype = mem_By["dtype"], buffer = shm_By.buf)
+        Bz = np.ndarray(mem_Bz["shape"], dtype = mem_Bz["dtype"], buffer = shm_Bz.buf)
+        bx = Bx / np.sqrt(mu_0 * rho)
+        by = By / np.sqrt(mu_0 * rho)
+        bz = Bz / np.sqrt(mu_0 * rho)
         vx = np.ndarray(mem_vx["shape"], dtype = mem_vx["dtype"], buffer = shm_vx.buf)
         vy = np.ndarray(mem_vy["shape"], dtype = mem_vy["dtype"], buffer = shm_vy.buf)
         vz = np.ndarray(mem_vz["shape"], dtype = mem_vz["dtype"], buffer = shm_vz.buf)
@@ -68,6 +78,11 @@ class PlotFranci():
         del v_perp
 
         Jz_rms = np.sqrt(np.mean((Jz**2), axis=1) - np.mean((Jz), axis=1)**2)
+
+        dvy_dx, dvy_dy = np.gradient(vy, dx, dx)
+        dvx_dx, dvx_dy = np.gradient(vx, dx, dx)
+        vorticity = dvy_dx - dvx_dy
+        vorticity_rms = np.sqrt(np.mean((vorticity**2), axis=1) - np.mean((vorticity), axis=1)**2)
         
         T = np.swapaxes(T,1,2)
         T_perp = np.mean(1/2 * (T[:,0,:] + T[:,1,:]) / T_0,axis=1) 
@@ -76,13 +91,40 @@ class PlotFranci():
 
         sigma_c = np.mean((2 * (vx*bx + vy*by + vz*bz) / (vx**2+vy**2+vz**2 + bx**2+by**2+bz**2)), axis = 1)
         sigma_r = np.mean(((vx**2+vy**2+vz**2 - bx**2-by**2-bz**2) / (vx**2+vy**2+vz**2 + bx**2+by**2+bz**2)), axis = 1)
+        del bx, by, bz
 
+        kx = 2*np.pi*np.fft.fftfreq(x_length, d=dx)
+        ky = 2*np.pi*np.fft.fftfreq(x_length, d=dx)
+        KX, KY = np.meshgrid(kx, ky)
+        K2 = KX**2 + KY**2
+
+        Bx_mesh = Bx.reshape((frames, x_length, x_length))
+        By_mesh = By.reshape((frames, x_length, x_length))
+        Bz_mesh = Bz.reshape((frames, x_length, x_length))
+
+        Bx_hat = np.fft.fft2(Bx_mesh, axes=(-2, -1))
+        By_hat = np.fft.fft2(By_mesh, axes=(-2, -1))
+
+        num = 1j * (KY*Bx_hat - KX*By_hat)
+        Az_hat = np.empty((frames, x_length, x_length), dtype=complex)
+        mask = K2 != 0
+        for frame in range(frames):
+            Az_hat[frame][mask] = -num[frame][mask] / K2[mask]
+            Az_hat[frame][~mask] = 0
+
+        Az = np.fft.ifft2(Az_hat, axes = (-2, -1)).real
+        sigma_m = np.mean(Az * Bz_mesh, axis=(-2,-1))
+
+        plt.rcParams['font.size'] = 12
         fig, axes = plt.subplots(2,2, figsize = (10,10))
         axes = axes.flatten()
+        plt.tight_layout(pad=2)
+        plt.subplots_adjust(wspace=0.2)
 
         J_z_rms_label = f"$J_\\parallel^{{rms}}$"
+        vorticity_rms_label = f"$\\omega_\\parallel^{{rms}}$"
         b_perp_label = f"$b_\\perp^{{rms}}$"
-        b_parr_label = f"$b_\\parallel{{rms}}$"
+        b_parr_label = f"$b_\\parallel^{{rms}}$"
         v_perp_label = f"$v_\\perp^{{rms}}$"
         v_parr_label = f"$v_\\parallel^{{rms}}$"
         T_perp_label = f"$\\langle\\frac{{T_\\perp}}{{T_0}}\\rangle$"
@@ -90,13 +132,20 @@ class PlotFranci():
         A_label = f"$\\langle A_p\\rangle$"
         label_c = f"$\\langle\\sigma_c\\rangle$"
         label_r = f"$\\langle\\sigma_r\\rangle$"
+        label_m = f"$\\langle\\sigma_m\\rangle$"
         
-        axes[0].plot(time, Jz_rms, label = r'{}'.format(J_z_rms_label))
+        J_line, = axes[0].plot(time, Jz_rms, label = r'{}'.format(J_z_rms_label))
+        ax4 = axes[0].twinx()
+        vort_line, = ax4.plot(time, vorticity_rms, label = r'{}'.format(vorticity_rms_label), color = "orange")
+        ax4.ticklabel_format(style='sci', axis='y', scilimits=(0,0))
+        lines = [J_line, vort_line]
+        labels = [J_line.get_label(), vort_line.get_label()]
         
         axes[1].plot(time, b_perp_rms, label = r'{}'.format(b_perp_label))
         axes[1].plot(time, b_parr_rms, label = r'{}'.format(b_parr_label))
         axes[1].plot(time, v_perp_rms, label = r'{}'.format(v_perp_label))
         axes[1].plot(time, v_parr_rms, label = r'{}'.format(v_parr_label))
+        axes[1].ticklabel_format(style='sci', axis='y', scilimits=(0,0))
         
         axes[2].plot(time, T_perp, label = r'{}'.format(T_perp_label))
         axes[2].plot(time, T_parr, label = r'{}'.format(T_parr_label))
@@ -104,8 +153,10 @@ class PlotFranci():
         
         axes[3].plot(time, sigma_c, label = r'{}'.format(label_c))
         axes[3].plot(time, sigma_r, label = r'{}'.format(label_r))
+        ax5 = axes[3].twinx()
+        ax5.plot(time, sigma_m, label = r'{}'.format(label_m), color = "green")
 
-        axes[0].legend()
+        axes[0].legend(lines, labels)
         axes[1].legend()
         axes[2].legend()
         axes[3].legend()

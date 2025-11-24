@@ -158,7 +158,6 @@ if __name__ == "__main__":
     cellids = cellids_fetcher(animations[0])
 
     variables = variables_to_be(animations)
-    print(variables)
 
     # Fetch all needed data into separate shared memory blocks
     shared_blocks = []
@@ -172,10 +171,6 @@ if __name__ == "__main__":
     # Include memory space addresses to animation objects
     for animation in animations:
         animation.memory_space = shared_blocks_dict
-
-    # Debugging
-    for key, value in shared_blocks_dict.items():
-        print(key, value)
 
     # Launch a separate process for each AnimationSpecs object
     with mp.Pool(len(animations)) as process:
