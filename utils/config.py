@@ -39,15 +39,16 @@ config["paths"] = {
 #   - kurtosis: again a list like [2,4,6...].
 
 config["settings"] = {
-    "start_frame" : 0,
-    "end_frame" : 10,
+    "start_frame" : 20,
+    "end_frame" : 40,
 
     "output_dir" : "Animations/test/",
 
     "animations" : [
 	                #("sf", "B", "x", [32,64,128,256,512,1024]),
                     #("kurtosis", "B", "x", [32,64,128,256,512,1024]),
-                    ("franci", "", "", [""]),
+                    #("franci", "", "", [""]),
+                    ("sigma", "", "", ["fourier"])
                     #("fourier", "B", "perp", ["1D"]),
                     #("fourier", "B", "perp", ["window"]),
                     #("2D", "J", "z", "unit"),

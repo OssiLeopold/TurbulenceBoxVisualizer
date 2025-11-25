@@ -40,7 +40,7 @@ class AnimationSpecs():
 
         self.animation_type = animation_type
 
-        if animation_type != "franci":
+        if animation_type not in ["franci", "sigma"]:
             self.variable = translate[variable][0]
             self.variable_name = variable
             self.component = component
@@ -51,6 +51,7 @@ class AnimationSpecs():
             self.variable = variable
             self.variable_name = variable
             self.component = component
+            self.animation_specific = animation_specific[0]
 
         self.bulkpath = bulkpath
         self.memory_space = {}

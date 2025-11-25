@@ -16,6 +16,7 @@ from utils.animation_kurtosis import AnimationKurtosis
 from utils.animation_rms import AnimationRMS
 from utils.animation_reconnection import AnimationReconnection
 from utils.plot_franci import PlotFranci
+from utils.animation_sigma import AnimationSigma
 
 config = ConfigParser()
 config.read(".TurbulenceBoxVisualizer.ini")
@@ -64,14 +65,15 @@ def variables_to_be(animations):
             for component in ["x","y"]:
                 variables_to_be.add((object.variable, component))
 
-        elif object.animation_type == "franci":
+        elif object.animation_type in ["franci", "sigma"]:
             for component in ["x","y","z"]:
                 variables_to_be.add(("vg_b_vol", component))
                 variables_to_be.add(("proton/vg_v", component))
-
             variables_to_be.add(("proton/vg_rho", "pass"))
-            variables_to_be.add(("vg_j", "z"))
-            variables_to_be.add(("vg_ttensor", "pass"))
+
+            if object.animation_type == "franci":
+                variables_to_be.add(("vg_j", "z"))
+                variables_to_be.add(("vg_ttensor", "pass"))
 
         elif object.animation_type == "reconnection":
             for component in ["x","y"]:
@@ -150,6 +152,8 @@ def chooser(object):
         AnimationReconnection(object)
     elif object.animation_type == "franci":
         PlotFranci(object)
+    elif object.animation_type == "sigma":
+        AnimationSigma(object)
 
 if __name__ == "__main__":
     animations = cfg_to_AnimationSpecs(animations)
