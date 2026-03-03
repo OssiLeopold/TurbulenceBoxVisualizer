@@ -49,7 +49,7 @@ def cellids_fetcher(object):
         cellids.append(vlsvobj.read_variable("CellID"))
     return cellids
 
-# Define which variables need to be fetched. Employ logic to avoid duplicates.
+# Define which variables need to be fetched.
 def variables_to_be(animations):
     variables_to_be = set() # or not?
     for object in animations:

@@ -20,17 +20,21 @@ os.environ['PTNOLATEX']='1'
 class AnimationSF():
     def __init__(self, object):
         self.object = object
-        shm = shared_memory.SharedMemory(name=object.memory_space)
-        self.data = np.ndarray(object.shape, dtype=object.dtype, buffer=shm.buf)
+        self.memory_space = object.memory_space
 
-        shm_time = shared_memory.SharedMemory(name=object.time)
-        self.time = np.ndarray(object.time_shape, dtype=object.time_dtype, buffer=shm_time.buf)
+        mem_data = self.memory_space[object.variable+object.component]
+        shm = shared_memory.SharedMemory(name=mem_data["address"])
+        self.data = np.ndarray(mem_data["shape"], dtype=mem_data["dtype"], buffer=shm.buf)
+
+        mem_time = self.memory_space["timepass"]
+        shm_time = shared_memory.SharedMemory(name=mem_time["address"])
+        self.time = np.ndarray(mem_time["shape"], dtype=mem_time["dtype"], buffer=shm_time.buf)
 
         self.vlsvobj = pt.vlsvfile.VlsvReader(object.bulkpath + "bulk.0000000.vlsv")
         self.x_length = int(self.vlsvobj.read_parameter("xcells_ini"))
         self.frames = len(self.data)
 
-        self.slices_pos = [i for i in range(1000)]
+        self.slices_pos = [i for i in range(self.x_length)]
         print(self.slices_pos)
         self.slice_n = len(self.slices_pos)
 
@@ -44,11 +48,12 @@ class AnimationSF():
 
         self.titles = []
         for dl in self.object.delta_ls:
-            title = f"$\\Delta l={{{dl}}}\\ cells$"
+            distance = int(dl) * 15
+            title = f"$\\Delta l={{{distance}}}\\ km$"
             self.titles.append(r"{}".format(title))
 
         if len(self.object.delta_ls) <= 3:
-            fig, self.axes = plt.subplots(1,len(self.object.delta_ls), figsize=(12,4))
+            fig, self.axes = plt.subplots(1,len(self.object.delta_ls), figsize=(12,5))
         elif len(self.object.delta_ls) == 4:
             fig, self.axes = plt.subplots(2,2, figsize=(12,8))
         elif len(self.object.delta_ls) <= 6:
@@ -57,9 +62,9 @@ class AnimationSF():
             fig, self.axes = plt.subplots(3,3, figsize=(16,12))
 
         fig.tight_layout(pad=4.0)
-        suptitle = f"${{{object.variable_name}}}_{{{object.component}}}$ structure function"
-        fig.suptitle(r'{}'.format(suptitle))
-        self.timelabel = fig.text(0.6, 0.98, '', ha='center', va='top', fontsize = 16)
+        suptitle = f"$\delta{{{object.variable_name}}}_{{{object.component}}}$ todennäköisyystiheysfunktio"
+        fig.suptitle(r'{}'.format(suptitle), fontsize=16)
+        self.timelabel = fig.text(0.6, 1.5, '', ha='center', va='top', fontsize = 16)
         
         self.axes = self.axes.flatten()
 
@@ -70,7 +75,7 @@ class AnimationSF():
         anim = animation.FuncAnimation(fig, self.update, frames = self.frames, interval = 20)
         
         writer = FFMpegWriter(fps=5)
-        anim.save(object.name, writer=writer)
+        anim.save(object.name, writer=writer, dpi=200)
         plt.close()
 
     def update(self,frame):
@@ -112,15 +117,15 @@ class AnimationSF():
             x_label = f"$(\\delta {{{self.object.variable_name}}}_{{{self.object.component}}}-\\mu)/\\sigma$"
 
             if len(self.axes) < 4:
-                ax.set_xlabel(x_label)
+                ax.set_xlabel(x_label, fontsize=16)
             elif len(self.axes) == 4 and i > len(self.axes) - 3:
                 ax.set_xlabel(x_label)
             elif len(self.axes) > 4 and i > len(self.axes) - 4:
                 ax.set_xlabel(x_label)
 
-            ax.set_xlim(-6,6)
+            ax.set_xlim(-5,5)
             ax.set_yscale("log")
-            ax.set_ylim(1e-4,1)
+            ax.set_ylim(1e-3,1)
 
         self.timelabel.set_text(f"{self.time[frame]:.1f}s")
 

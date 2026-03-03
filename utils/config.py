@@ -5,7 +5,7 @@ config = ConfigParser()
 config["paths"] = {
     "ffmpeg_path" : "/home/elmer/turso/appl/ffmpeg/bin/ffmpeg",
     "latex_path" : "/home/elmer/turso/appl/tex-basic/texlive/2023/bin/x86_64-linux:",
-    "bulkpath" : "/home/elmer/turso/bulks/sim32/"
+    "bulkpath" : "/home/elmer/turso/bulks_mount_home/test/"
 }
 
 # Define what animations are to be produced:
@@ -39,22 +39,23 @@ config["paths"] = {
 #   - kurtosis: again a list like [2,4,6...].
 
 config["settings"] = {
-    "start_frame" : 20,
-    "end_frame" : 40,
+    "start_frame" : 0,
+    "end_frame" :22,
 
-    "output_dir" : "Animations/test/",
+    "output_dir" : "Animations/velocity_test8/",
 
     "animations" : [
-	                #("sf", "B", "x", [32,64,128,256,512,1024]),
+	                #("sf", "B", "y", [32,512]),
                     #("kurtosis", "B", "x", [32,64,128,256,512,1024]),
                     #("franci", "", "", [""]),
-                    ("sigma", "", "", ["fourier"])
+                    #("sigma", "", "", ["fourier"])
                     #("fourier", "B", "perp", ["1D"]),
-                    #("fourier", "B", "perp", ["window"]),
+                    ("fourier", "B", "perp", ["window"]),
                     #("2D", "J", "z", "unit"),
-                    #("triple", "B", "pass", "unit"),
+                    ("triple", "B", "pass", "unit"),
                     #("triple", "B", "pass", "unitless"),
-                    #("reconnection", "J", "z", "unit")
+                    #("reconnection", "J", "z", "unit"),
+                    #("2D", "J", "z", ["unit"]),
             ],
 
     "filetype" : ".mp4"

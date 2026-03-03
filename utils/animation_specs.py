@@ -5,7 +5,9 @@ config = ConfigParser()
 config.read(".TurbulenceBoxVisualizer.ini")
 
 bulkpath = config["paths"]["bulkpath"]
-name_beginning = config["settings"]["output_dir"]
+outputpath = config["settings"]["output_dir"]
+_, simname, _ = outputpath.split("/")
+
 filetype = config["settings"]["filetype"]
 
 # Dictionary for translating instructions for VlsvReader
@@ -57,22 +59,22 @@ class AnimationSpecs():
         self.memory_space = {}
 
         if variable == "rho":
-            name = f"{name_beginning}_{animation_type}_{self.variable_name}{filetype}"
+            name = f"{outputpath}{simname}_{animation_type}_{self.variable_name}{filetype}"
 
         elif animation_type == "2D":
-            name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}{filetype}"
+            name = f"{outputpath}{simname}_{animation_type}_{self.variable_name}_{component}{filetype}"
 
         elif animation_type == "triple":
-            name = f"{name_beginning}_{animation_type}_{self.variable_name}{filetype}"
+            name = f"{outputpath}{simname}_{animation_type}_{self.variable_name}{filetype}"
 
         elif animation_type == "fourier":
-            name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}_{self.fourier_type}{filetype}"
+            name = f"{outputpath}{simname}_{animation_type}_{self.variable_name}_{component}_{self.fourier_type}{filetype}"
             
         elif animation_type == "sf":
-            name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}_{self.delta_ls[0]}-{self.delta_ls[-1]}{filetype}"
+            name = f"{outputpath}{simname}_{animation_type}_{self.variable_name}_{component}_{self.delta_ls[0]}-{self.delta_ls[-1]}{filetype}"
         
         else:
-            name = f"{name_beginning}_{animation_type}_{self.variable_name}_{component}{filetype}"
+            name = f"{outputpath}{simname}_{animation_type}_{self.variable_name}_{component}{filetype}"
         
         self.name = name
 

@@ -60,7 +60,7 @@ class AnimationRMS():
         T = np.swapaxes(T,1,2)
         print(T[1])
 
-        self.J_z_rms = np.sqrt(np.mean((J_z**2), axis=1) - np.mean((J_z), axis=1)**2)
+        self.J_z_rms = np.sqrt(np.mean((J_z**2), axis=1) - np.mean(J_z, axis=1)**2)
 
         b_perp = np.sqrt(bx**2 + by**2)
         self.b_parr_rms = np.sqrt(np.mean((bz**2), axis=1) - np.mean((bz), axis=1)**2)
