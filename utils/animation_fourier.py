@@ -219,7 +219,6 @@ class AnimationFourier():
 
         del data_x_mesh_ft, data_y_mesh_ft
         
-        nbins = 500
         dx = np.diff(self.x[0:self.x_length])[0]
 
         k_xy = 2*np.pi * sp.fft.fftshift(sp.fft.fftfreq(self.x_length, dx))
@@ -227,25 +226,42 @@ class AnimationFourier():
         K_perp = np.sqrt(KX**2 + KY**2)
         K_perp = K_perp.flatten()
 
+        print(K_perp)
+        print(len(K_perp))
+
         del k_xy, KX, KY
 
-        k_min = min(K_perp)
-        k_max = max(K_perp)
+        k_min = sorted(K_perp)[1]
+        k_max = sorted(K_perp)[-1]
 
-        #kbins = np.logspace(np.log10(k_min), np.log10(k_max), num=32)
-        kbins = np.arange(k_min, k_max, 4*k_max/self.x_length)
+        print(k_min)
+        print(k_max)
 
-        self.PSD_1D_perp = np.empty((self.frames, len(kbins)-1))
-        
-        #for frame in range(self.frames):
-        #    self.PSD_1D_perp[frame] = np.bincount(bin_idx, weights = PSD_2D_perp[frame].ravel(), minlength=nbins)
+        #kbins = np.concatenate([np.array([0]), np.logspace(np.log10(k_min*0.1), np.log10(k_max), num=31)])
+        kbins = np.logspace(np.log10(k_min), np.log10(k_max), num=32, base=10)
+        print(kbins)
+
+        #kbins = np.arange(k_min, k_max, 16*k_max/self.x_length)
+
+        print(kbins[0])
+        print(kbins[-1])
+
+        print(len(kbins))
+
+        PSD_1D_perp_raw = np.empty((self.frames, len(kbins)-1))
 
         for frame in range(self.frames):
             value = PSD_2D_perp[frame].flatten()
-            self.PSD_1D_perp[frame],_,_ = sp.stats.binned_statistic(K_perp, value, statistic="sum", bins=kbins)
-            #self.PSD_1D_perp[frame] /= np.pi * (kbins[1:]**2 - kbins[:-1]**2)
+            PSD_1D_perp_raw[frame],_,_ = sp.stats.binned_statistic(K_perp, value, statistic="sum", bins=kbins)
+            zeros = PSD_1D_perp_raw[frame] == 0.0
+            non_zeros = zeros == False
+            PSD_1D_perp_raw[frame][0:sum(non_zeros)] = PSD_1D_perp_raw[frame][non_zeros]
+
+        self.PSD_1D_perp = PSD_1D_perp_raw[:,0:sum(non_zeros)]
 
         del PSD_2D_perp
+
+        print(self.PSD_1D_perp)
 
         Min = min(self.PSD_1D_perp.flatten())
         Max = max(self.PSD_1D_perp.flatten())
@@ -253,6 +269,7 @@ class AnimationFourier():
         prot_plas_freq = np.sqrt(5e6 * (1.602176634 * 10**(-19))**2 / (8.8541878128 * 10**(-12) * 1.67262192595 * 10**(-27)))
         self.dp = 299792458 / prot_plas_freq
         self.k_vals = 0.5 * (kbins[1:] + kbins[:-1]) * self.dp
+        self.k_vals = self.k_vals[non_zeros]
 
         delta_k = [2,3]
         self.gradients = np.empty((self.frames, len(delta_k), len(self.k_vals)))
@@ -272,7 +289,7 @@ class AnimationFourier():
         
         self.p = [self.ax[0].plot([1],[1]), self.ax[1].plot([1],[1], label=f"{delta_k[0]}"), self.ax[1].plot([1],[1], label=f"{delta_k[1]}")]
  
-        self.ax[1].set_ylim(-10,1)
+        self.ax[1].set_ylim(-3,1)
         self.ax[1].set_xscale("log")
         self.ax[1].set_xlim(self.k_vals[0]*0.9,self.k_vals[-1])
         self.ax[1].grid(True, which='both', linestyle='--', alpha=0.4)
@@ -281,7 +298,7 @@ class AnimationFourier():
         self.ax[0].set_xscale("log")
         self.ax[0].set_yscale("log")
 
-        self.ax[0].set_ylim(Min,Max)
+        self.ax[0].set_ylim(1e-15,Max)
         self.ax[0].set_xlim(self.k_vals[0]*0.9,self.k_vals[-1])
         self.ax[0].grid(True, which='both', linestyle='--', alpha=0.4)
 

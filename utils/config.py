@@ -5,7 +5,7 @@ config = ConfigParser()
 config["paths"] = {
     "ffmpeg_path" : "/home/elmer/turso/appl/ffmpeg/bin/ffmpeg",
     "latex_path" : "/home/elmer/turso/appl/tex-basic/texlive/2023/bin/x86_64-linux:",
-    "bulkpath" : "/home/elmer/turso/bulks_mount_home/test/"
+    "bulkpath" : "/home/elmer/mahti/bulks_mount/velocity_test8/"
 }
 
 # Define what animations are to be produced:
@@ -39,8 +39,8 @@ config["paths"] = {
 #   - kurtosis: again a list like [2,4,6...].
 
 config["settings"] = {
-    "start_frame" : 0,
-    "end_frame" :22,
+    "start_frame" : 50,
+    "end_frame" : 100,
 
     "output_dir" : "Animations/velocity_test8/",
 
@@ -52,7 +52,7 @@ config["settings"] = {
                     #("fourier", "B", "perp", ["1D"]),
                     ("fourier", "B", "perp", ["window"]),
                     #("2D", "J", "z", "unit"),
-                    ("triple", "B", "pass", "unit"),
+                    #("triple", "B", "pass", "unit"),
                     #("triple", "B", "pass", "unitless"),
                     #("reconnection", "J", "z", "unit"),
                     #("2D", "J", "z", ["unit"]),
